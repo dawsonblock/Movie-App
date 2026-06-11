@@ -1,0 +1,215 @@
+import { app, BrowserWindow, shell } from "electron";
+import { spawn } from "node:child_process";
+import { createConnection } from "node:net";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isDev = !app.isPackaged;
+const PORT = 45876;
+
+let mainWindow = null;
+let serverProcess = null;
+
+function getStandaloneDir() {
+  if (isDev) {
+    return path.join(__dirname, "..", ".next", "standalone");
+  }
+
+  return path.join(process.resourcesPath, "standalone");
+}
+
+function loadEnvFile(envPath) {
+  if (!fs.existsSync(envPath)) return;
+
+  const contents = fs.readFileSync(envPath, "utf8");
+
+  for (const line of contents.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (!(key in process.env)) {
+      process.env[key] = value;
+    }
+  }
+}
+
+function getServerEntry() {
+  const standaloneDir = getStandaloneDir();
+  const directEntry = path.join(standaloneDir, "server.js");
+
+  if (fs.existsSync(directEntry)) {
+    return { standaloneDir, serverEntry: directEntry };
+  }
+
+  const nestedEntries = [];
+
+  function walk(currentDir, depth = 0) {
+    if (depth > 6 || !fs.existsSync(currentDir)) return;
+
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const fullPath = path.join(currentDir, entry.name);
+      if (entry.isFile() && entry.name === "server.js") {
+        nestedEntries.push(fullPath);
+      } else if (entry.isDirectory()) {
+        walk(fullPath, depth + 1);
+      }
+    }
+  }
+
+  walk(standaloneDir);
+
+  if (nestedEntries.length === 0) {
+    throw new Error(`Could not find Next.js server.js in ${standaloneDir}`);
+  }
+
+  const serverEntry = nestedEntries[0];
+  return { standaloneDir: path.dirname(serverEntry), serverEntry };
+}
+
+function waitForServer(port, timeoutMs = 60_000) {
+  const startedAt = Date.now();
+
+  return new Promise((resolve, reject) => {
+    const check = () => {
+      const socket = createConnection({ host: "127.0.0.1", port });
+
+      socket.once("connect", () => {
+        socket.end();
+        resolve();
+      });
+
+      socket.once("error", () => {
+        socket.destroy();
+
+        if (Date.now() - startedAt > timeoutMs) {
+          reject(new Error(`Timed out waiting for server on port ${port}`));
+          return;
+        }
+
+        setTimeout(check, 250);
+      });
+    };
+
+    check();
+  });
+}
+
+function startNextServer() {
+  const { standaloneDir, serverEntry } = getServerEntry();
+
+  loadEnvFile(path.join(standaloneDir, ".env"));
+  loadEnvFile(path.join(standaloneDir, ".env.local"));
+  loadEnvFile(path.join(standaloneDir, ".env.production"));
+  loadEnvFile(path.join(standaloneDir, ".env.production.local"));
+
+  if (isDev) {
+    loadEnvFile(path.join(__dirname, "..", ".env.local"));
+  }
+
+  serverProcess = spawn(process.execPath, [serverEntry], {
+    cwd: standaloneDir,
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: "1",
+      NODE_ENV: "production",
+      PORT: String(PORT),
+      HOSTNAME: "127.0.0.1",
+    },
+    stdio: isDev ? "inherit" : "pipe",
+  });
+
+  serverProcess.on("exit", (code) => {
+    if (code && code !== 0) {
+      console.error(`Next.js server exited with code ${code}`);
+    }
+  });
+}
+
+function stopNextServer() {
+  if (!serverProcess || serverProcess.killed) return;
+  serverProcess.kill("SIGTERM");
+  serverProcess = null;
+}
+
+async function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1440,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 700,
+    title: "Cinextma",
+    backgroundColor: "#0D0C0F",
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
+
+  await mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
+}
+
+const gotLock = app.requestSingleInstanceLock();
+
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(async () => {
+    try {
+      startNextServer();
+      await waitForServer(PORT);
+      await createWindow();
+    } catch (error) {
+      console.error(error);
+      app.quit();
+    }
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
+  app.on("activate", async () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      await createWindow();
+    }
+  });
+
+  app.on("before-quit", () => {
+    stopNextServer();
+  });
+}
