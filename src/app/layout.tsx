@@ -63,7 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               {IS_PRODUCTION && <Disclaimer />}
               <TopNavbar />
               <Sidebar>
-                <main className={cn("container mx-auto max-w-full", SpacingClasses.main)}>
+                <main className={cn("mx-auto w-full max-w-[1440px]", SpacingClasses.main, "md:px-6 lg:px-10")}>
                   {children}
                 </main>
               </Sidebar>

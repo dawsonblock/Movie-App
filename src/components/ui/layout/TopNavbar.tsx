@@ -3,13 +3,13 @@
 import BackButton from "@/components/ui/button/BackButton";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/utils/helpers";
-import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/react";
+import { Kbd, Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/react";
 import { useWindowScroll } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FaSearch } from "react-icons/fa";
 import FullscreenToggleButton from "../button/FullscreenToggleButton";
 import UserProfileButton from "../button/UserProfileButton";
-import SearchInput from "../input/SearchInput";
 import ThemeSwitchDropdown from "../input/ThemeSwitchDropdown";
 import BrandLogo from "../other/BrandLogo";
 
@@ -31,33 +31,38 @@ const TopNavbar = () => {
       isBlurred={false}
       position="sticky"
       maxWidth="full"
-      classNames={{ wrapper: "px-2 md:px-4" }}
-      className={cn("inset-0 h-min bg-transparent", {
-        "bg-background": show,
-      })}
+      classNames={{ wrapper: "px-2 md:px-4 lg:px-6" }}
+      className={cn(
+        "app-region-drag inset-0 h-min border-b border-transparent bg-transparent backdrop-blur-xl transition-colors",
+        {
+          "border-white/5 bg-background/70": show,
+        }
+      )}
     >
       {!show && (
         <div
-          className="border-background bg-background absolute inset-0 h-full w-full border-b"
-          style={{ opacity: opacity }}
+          className="absolute inset-0 h-full w-full border-b border-white/5 bg-background/70"
+          style={{ opacity }}
         />
       )}
-      <NavbarBrand>
+      <NavbarBrand className="app-region-no-drag">
         {show ? <BrandLogo /> : <BackButton href={tv ? "/?content=tv" : "/"} />}
       </NavbarBrand>
       {show && !pathName.startsWith("/search") && (
-        <NavbarContent className="hidden w-full max-w-lg gap-2 md:flex" justify="center">
+        <NavbarContent className="hidden w-full max-w-xl gap-2 md:flex" justify="center">
           <NavbarItem className="w-full">
-            <Link href="/search" className="w-full">
-              <SearchInput
-                className="pointer-events-none"
-                placeholder="Search your favorite movies..."
-              />
+            <Link
+              href="/search"
+              className="app-region-no-drag group flex w-full items-center gap-2 rounded-full bg-secondary-background px-4 py-2 text-sm text-foreground-400 transition-colors hover:bg-secondary-background/80 hover:text-foreground"
+            >
+              <FaSearch className="size-4" />
+              <span className="flex-1 text-left">Search your favorite movies...</span>
+              <Kbd className="hidden md:inline-block">CTRL+K</Kbd>
             </Link>
           </NavbarItem>
         </NavbarContent>
       )}
-      <NavbarContent justify="end">
+      <NavbarContent justify="end" className="app-region-no-drag">
         <NavbarItem className="flex gap-1">
           <ThemeSwitchDropdown />
           <FullscreenToggleButton />

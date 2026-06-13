@@ -43,7 +43,7 @@ const TVShowDetailPage: NextPage<Params<{ id: number }>> = ({ params }) => {
 
   if (isPending) {
     return (
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <Spinner size="lg" className="absolute-center" color="warning" variant="simple" />
       </div>
     );
@@ -52,22 +52,26 @@ const TVShowDetailPage: NextPage<Params<{ id: number }>> = ({ params }) => {
   if (error) notFound();
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <Suspense
         fallback={
           <Spinner size="lg" className="absolute-center" color="warning" variant="simple" />
         }
       >
-        <div className="flex flex-col gap-10">
-          <TvShowBackdropSection tv={tv} />
-          <TvShowOverviewSection
-            onViewEpisodesClick={() => scrollIntoView({ alignment: "center" })}
-            tv={tv}
-          />
-          <TvShowCastsSection casts={tv.credits.cast} />
-          <PhotosSection images={tv.images.backdrops} type="tv" />
-          <TvShowsSeasonsSelection ref={targetRef} id={id} seasons={tv.seasons} />
-          <TvShowRelatedSection tv={tv} />
+        <TvShowBackdropSection tv={tv} />
+        <TvShowOverviewSection
+          onViewEpisodesClick={() => scrollIntoView({ alignment: "center" })}
+          tv={tv}
+        />
+        <div className="relative z-3 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
+          <div className="flex flex-col gap-10">
+            <PhotosSection images={tv.images.backdrops} type="tv" />
+            <TvShowsSeasonsSelection ref={targetRef} id={id} seasons={tv.seasons} />
+          </div>
+          <div className="flex flex-col gap-10">
+            <TvShowCastsSection casts={tv.credits.cast} />
+            <TvShowRelatedSection tv={tv} />
+          </div>
         </div>
       </Suspense>
     </div>

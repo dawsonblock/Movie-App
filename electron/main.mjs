@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, Menu } from "electron";
 import { spawn } from "node:child_process";
 import { createConnection } from "node:net";
 import fs from "node:fs";
@@ -146,15 +146,71 @@ function stopNextServer() {
   serverProcess = null;
 }
 
+function buildMenu() {
+  const template = [
+    {
+      label: app.getName(),
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    {
+      label: "Window",
+      submenu: [
+        { role: "minimize" },
+        { role: "close" },
+        { type: "separator" },
+        { role: "front" },
+      ],
+    },
+  ];
+
+  return Menu.buildFromTemplate(template);
+}
+
 async function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
+    width: 1600,
+    height: 960,
     minWidth: 1024,
     minHeight: 700,
     title: "Cinextma",
     backgroundColor: "#0D0C0F",
     show: false,
+    titleBarStyle: "hiddenInset",
+    trafficLightPosition: { x: 14, y: 14 },
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -166,9 +222,18 @@ async function createWindow() {
     mainWindow?.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+  mainWindow.webContents.setWindowOpenHandler(() => {
     return { action: "deny" };
+  });
+
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (!url.startsWith(`http://127.0.0.1:${PORT}`)) {
+      event.preventDefault();
+    }
+  });
+
+  mainWindow.webContents.session.on("will-download", (event) => {
+    event.preventDefault();
   });
 
   await mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
@@ -191,6 +256,7 @@ if (!gotLock) {
       startNextServer();
       await waitForServer(PORT);
       await createWindow();
+      Menu.setApplicationMenu(buildMenu());
     } catch (error) {
       console.error(error);
       app.quit();

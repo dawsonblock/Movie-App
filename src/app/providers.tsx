@@ -1,6 +1,8 @@
 "use client";
 
-import { PropsWithChildren, Suspense } from "react";
+import { CommandPalette } from "@/components/ui/overlay/CommandPalette";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { PropsWithChildren, Suspense, useState } from "react";
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -17,6 +19,11 @@ export default function Providers({ children }: PropsWithChildren) {
   const pathName = usePathname();
   const { content } = useDiscoverFilters();
   const tv = pathName.includes("/tv/") || content === "tv";
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useKeyboardShortcuts({
+    onTogglePalette: () => setPaletteOpen((prev) => !prev),
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -47,6 +54,7 @@ export default function Providers({ children }: PropsWithChildren) {
           </Suspense>
         </NextThemesProvider>
       </HeroUIProvider>
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <div className="hidden md:block">
         <ReactQueryDevtools initialIsOpen={false} />
       </div>
