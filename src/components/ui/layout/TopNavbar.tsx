@@ -7,6 +7,7 @@ import { Kbd, Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/rea
 import { useWindowScroll } from "@mantine/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import FullscreenToggleButton from "../button/FullscreenToggleButton";
 import UserProfileButton from "../button/UserProfileButton";
@@ -15,7 +16,12 @@ import BrandLogo from "../other/BrandLogo";
 
 const TopNavbar = () => {
   const pathName = usePathname();
+  const [kbdLabel, setKbdLabel] = useState("CTRL+K");
   const [{ y }] = useWindowScroll();
+
+  useEffect(() => {
+    setKbdLabel(/macintosh|mac os x/i.test(navigator.userAgent) ? "CMD+K" : "CTRL+K");
+  }, []);
   const opacity = Math.min((y / 1000) * 5, 1);
   const hrefs = siteConfig.navItems.map((item) => item.href);
   const show = hrefs.includes(pathName);
@@ -57,7 +63,7 @@ const TopNavbar = () => {
             >
               <FaSearch className="size-4" />
               <span className="flex-1 text-left">Search your favorite movies...</span>
-              <Kbd className="hidden md:inline-block">CTRL+K</Kbd>
+              <Kbd className="hidden md:inline-block">{kbdLabel}</Kbd>
             </Link>
           </NavbarItem>
         </NavbarContent>

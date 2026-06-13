@@ -30,7 +30,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   useEffect(() => {
     if (isOpen) {
       setQuery("");
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -91,6 +92,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         <ModalBody>
           {query.trim() && (
             <button
+              type="button"
               onClick={handleSearch}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-secondary-background"
             >

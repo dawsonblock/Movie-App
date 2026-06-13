@@ -49,7 +49,7 @@ const MovieDetailPage: NextPage<Params<{ id: number }>> = ({ params }) => {
       <Suspense fallback={<Spinner size="lg" className="absolute-center" variant="simple" />}>
         <BackdropSection movie={movie} />
         <OverviewSection movie={movie} />
-        <div className="relative z-3 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
+        <div className="relative z-30 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
           <div className="flex flex-col gap-10">
             <PhotosSection images={movie.images.backdrops as Image[]} />
           </div>

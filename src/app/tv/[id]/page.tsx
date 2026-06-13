@@ -63,7 +63,7 @@ const TVShowDetailPage: NextPage<Params<{ id: number }>> = ({ params }) => {
           onViewEpisodesClick={() => scrollIntoView({ alignment: "center" })}
           tv={tv}
         />
-        <div className="relative z-3 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
+        <div className="relative z-30 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
           <div className="flex flex-col gap-10">
             <PhotosSection images={tv.images.backdrops} type="tv" />
             <TvShowsSeasonsSelection ref={targetRef} id={id} seasons={tv.seasons} />

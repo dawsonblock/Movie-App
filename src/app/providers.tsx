@@ -2,7 +2,7 @@
 
 import { CommandPalette } from "@/components/ui/overlay/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { PropsWithChildren, Suspense, useState } from "react";
+import { PropsWithChildren, Suspense, useCallback, useState } from "react";
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -21,8 +21,10 @@ export default function Providers({ children }: PropsWithChildren) {
   const tv = pathName.includes("/tv/") || content === "tv";
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  const togglePalette = useCallback(() => setPaletteOpen((prev) => !prev), []);
+
   useKeyboardShortcuts({
-    onTogglePalette: () => setPaletteOpen((prev) => !prev),
+    onTogglePalette: togglePalette,
   });
 
   return (
@@ -52,9 +54,9 @@ export default function Providers({ children }: PropsWithChildren) {
               {children}
             </ProgressProvider>
           </Suspense>
+          <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
         </NextThemesProvider>
       </HeroUIProvider>
-      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <div className="hidden md:block">
         <ReactQueryDevtools initialIsOpen={false} />
       </div>

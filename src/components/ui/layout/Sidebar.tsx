@@ -16,7 +16,9 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {shouldShowSidebar && (
         <aside className="fixed left-0 top-0 z-30 hidden h-screen w-20 flex-col border-r border-white/5 bg-surface pt-8 transition-all duration-300 ease-out md:flex lg:w-56">
           <div className="app-region-drag flex h-16 shrink-0 items-center px-4 lg:px-6">
-            <BrandLogo className="text-xl lg:text-2xl" />
+            <div className="app-region-no-drag">
+              <BrandLogo className="text-xl lg:text-2xl" />
+            </div>
           </div>
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3">
             {siteConfig.navItems.map((item) => {

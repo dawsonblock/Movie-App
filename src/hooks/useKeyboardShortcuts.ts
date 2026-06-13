@@ -9,7 +9,7 @@ export function useKeyboardShortcuts({
 }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const isMac = navigator.platform.toUpperCase().includes("MAC");
+      const isMac = /macintosh|mac os x/i.test(navigator.userAgent);
       const meta = isMac ? e.metaKey : e.ctrlKey;
 
       // CMD/CTRL + K: Toggle command palette

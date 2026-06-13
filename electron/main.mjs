@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from "electron";
+import { app, BrowserWindow, Menu, shell } from "electron";
 import { spawn } from "node:child_process";
 import { createConnection } from "node:net";
 import fs from "node:fs";
@@ -209,8 +209,8 @@ async function createWindow() {
     title: "Cinextma",
     backgroundColor: "#0D0C0F",
     show: false,
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 14, y: 14 },
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    ...(process.platform === "darwin" ? { trafficLightPosition: { x: 14, y: 14 } } : {}),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -222,12 +222,18 @@ async function createWindow() {
     mainWindow?.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler(() => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("http:") || url.startsWith("https:")) {
+      shell.openExternal(url);
+    }
     return { action: "deny" };
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (!url.startsWith(`http://127.0.0.1:${PORT}`)) {
+    if (
+      !url.startsWith(`http://127.0.0.1:${PORT}`) &&
+      !url.startsWith(`http://localhost:${PORT}`)
+    ) {
       event.preventDefault();
     }
   });
