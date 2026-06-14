@@ -17,7 +17,7 @@ vi.mock("@/utils/supabase/server", () => ({
 
 // Mock migration function
 vi.mock("@/utils/migration", () => ({
-  performMigration: vi.fn(),
+  performMigration: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("Auth Actions", () => {
@@ -32,15 +32,19 @@ describe("Auth Actions", () => {
         error: null,
       });
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockResolvedValue({
+      const mockMaybeSingle = vi.fn().mockResolvedValue({
         data: { username: "testuser" },
         error: null,
+      });
+      const mockEq = vi.fn().mockReturnValue({
+        maybeSingle: mockMaybeSingle,
+      });
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: mockEq,
       });
 
       mockSupabase.from.mockReturnValue({
         select: mockSelect,
-        eq: mockEq,
       });
 
       const result = await signIn({
@@ -75,15 +79,19 @@ describe("Auth Actions", () => {
         error: null,
       });
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockResolvedValue({
+      const mockMaybeSingle = vi.fn().mockResolvedValue({
         data: null,
         error: { message: "Database error" },
+      });
+      const mockEq = vi.fn().mockReturnValue({
+        maybeSingle: mockMaybeSingle,
+      });
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: mockEq,
       });
 
       mockSupabase.from.mockReturnValue({
         select: mockSelect,
-        eq: mockEq,
       });
 
       const result = await signIn({
@@ -108,6 +116,7 @@ describe("Auth Actions", () => {
         email: "test@example.com",
         password: "password123",
         username: "testuser",
+        confirm: "password123",
       });
 
       expect(result.success).toBe(true);
@@ -124,6 +133,7 @@ describe("Auth Actions", () => {
         email: "test@example.com",
         password: "password123",
         username: "testuser",
+        confirm: "password123",
       });
 
       expect(result.success).toBe(false);
@@ -140,6 +150,7 @@ describe("Auth Actions", () => {
         email: "test@example.com",
         password: "password123",
         username: "testuser",
+        confirm: "password123",
       });
 
       expect(result.success).toBe(false);

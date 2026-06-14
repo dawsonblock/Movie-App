@@ -29,20 +29,19 @@ describe("Library Actions", () => {
         error: null,
       });
 
-      const mockInsert = vi.fn().mockResolvedValue({
-        data: { id: 1, title: "Test Movie" },
-        error: null,
-      });
-      const mockSelect = vi.fn().mockReturnThis();
       const mockSingle = vi.fn().mockResolvedValue({
         data: { id: 1, title: "Test Movie" },
         error: null,
       });
+      const mockSelect = vi.fn().mockReturnValue({
+        single: mockSingle,
+      });
+      const mockInsert = vi.fn().mockReturnValue({
+        select: mockSelect,
+      });
 
       mockSupabase.from.mockReturnValue({
         insert: mockInsert,
-        select: mockSelect,
-        single: mockSingle,
       });
 
       const result = await addToWatchlist({
@@ -87,15 +86,19 @@ describe("Library Actions", () => {
         error: null,
       });
 
-      const mockInsert = vi.fn().mockResolvedValue({
+      const mockSingle = vi.fn().mockResolvedValue({
         data: null,
         error: { code: "23505", message: "Duplicate key" },
+      });
+      const mockSelect = vi.fn().mockReturnValue({
+        single: mockSingle,
+      });
+      const mockInsert = vi.fn().mockReturnValue({
+        select: mockSelect,
       });
 
       mockSupabase.from.mockReturnValue({
         insert: mockInsert,
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn(),
       });
 
       const result = await addToWatchlist({
@@ -121,12 +124,13 @@ describe("Library Actions", () => {
         error: null,
       });
 
-      const mockDelete = vi.fn().mockResolvedValue({ error: null });
-      const mockEq = vi.fn().mockReturnThis();
+      const mockEq3 = vi.fn().mockResolvedValue({ error: null });
+      const mockEq2 = vi.fn().mockReturnValue({ eq: mockEq3 });
+      const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 });
+      const mockDelete = vi.fn().mockReturnValue({ eq: mockEq1 });
 
       mockSupabase.from.mockReturnValue({
         delete: mockDelete,
-        eq: mockEq,
       });
 
       const result = await removeFromWatchlist(1, "movie");
@@ -248,12 +252,12 @@ describe("Library Actions", () => {
         error: null,
       });
 
-      const mockDelete = vi.fn().mockResolvedValue({ error: null });
-      const mockEq = vi.fn().mockReturnThis();
+      const mockEq2 = vi.fn().mockResolvedValue({ error: null });
+      const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 });
+      const mockDelete = vi.fn().mockReturnValue({ eq: mockEq1 });
 
       mockSupabase.from.mockReturnValue({
         delete: mockDelete,
-        eq: mockEq,
       });
 
       const result = await removeAllWatchlist("movie");

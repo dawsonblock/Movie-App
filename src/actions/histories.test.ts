@@ -52,14 +52,16 @@ describe("Histories Actions", () => {
         vote_average: 8.5,
       });
 
-      const mockUpsert = vi.fn().mockResolvedValue({
+      const mockSelect = vi.fn().mockResolvedValue({
         data: [{ id: 1 }],
         error: null,
+      });
+      const mockUpsert = vi.fn().mockReturnValue({
+        select: mockSelect,
       });
 
       mockSupabase.from.mockReturnValue({
         upsert: mockUpsert,
-        select: vi.fn().mockReturnThis(),
       });
 
       const result = await syncHistory({
@@ -90,14 +92,16 @@ describe("Histories Actions", () => {
         vote_average: 8.5,
       });
 
-      const mockUpsert = vi.fn().mockResolvedValue({
+      const mockSelect = vi.fn().mockResolvedValue({
         data: [{ id: 1 }],
         error: null,
+      });
+      const mockUpsert = vi.fn().mockReturnValue({
+        select: mockSelect,
       });
 
       mockSupabase.from.mockReturnValue({
         upsert: mockUpsert,
-        select: vi.fn().mockReturnThis(),
       });
 
       const result = await syncHistory({
