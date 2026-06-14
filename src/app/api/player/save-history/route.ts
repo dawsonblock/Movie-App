@@ -17,12 +17,12 @@ const PlayerEventTypeSchema = z.enum([
 
 const SaveHistoryBodySchema = z.object({
   event: PlayerEventTypeSchema,
-  currentTime: z.number(),
-  duration: z.number(),
+  currentTime: z.number().min(0).max(86400),
+  duration: z.number().min(0).max(86400),
   mediaId: z.union([z.string().regex(/^\d+$/, "Invalid mediaId format").transform(Number), z.number().int().positive()]),
   mediaType: z.enum(["movie", "tv"]),
-  season: z.number().optional(),
-  episode: z.number().optional(),
+  season: z.number().int().min(0).max(999).optional(),
+  episode: z.number().int().min(0).max(999).optional(),
   completed: z.boolean().optional(),
   mediaDetails: z.object({
     adult: z.boolean(),
