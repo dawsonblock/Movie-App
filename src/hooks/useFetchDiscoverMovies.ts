@@ -10,7 +10,7 @@ interface FetchDiscoverMovies {
   genres?: string;
 }
 
-const useFetchDiscoverMovies = ({
+const fetchDiscoverMovies = ({
   page = 1,
   type = "discover",
   genres,
@@ -36,4 +36,4 @@ const useFetchDiscoverMovies = ({
   return queryData();
 };
 
-export default useFetchDiscoverMovies;
+export default fetchDiscoverMovies;

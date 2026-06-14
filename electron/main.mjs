@@ -222,9 +222,10 @@ async function createWindow() {
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
+    const u = new URL(url);
     if (
-      !url.startsWith(`http://127.0.0.1:${PORT}`) &&
-      !url.startsWith(`http://localhost:${PORT}`)
+      !((u.hostname === "127.0.0.1" || u.hostname === "localhost") &&
+        u.port === String(PORT))
     ) {
       event.preventDefault();
     }

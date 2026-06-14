@@ -27,7 +27,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({
     copy(text);
     addToast({ title: copiedLabel, color: "primary" });
     onCopied?.();
-  }, [text, copiedLabel]);
+  }, [text, copiedLabel, copy, onCopied]);
 
   const buttonProps: IconButtonProps = {
     onClick: handleCopy,

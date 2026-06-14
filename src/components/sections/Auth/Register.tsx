@@ -1,5 +1,5 @@
 import { signUp } from "@/actions/auth";
-import { Google, LockPassword, Mail, User } from "@/utils/icons";
+import { LockPassword, Mail, User } from "@/utils/icons";
 import { addToast, Button, Divider, Input, Link } from "@heroui/react";
 import { AuthFormProps } from "./Forms";
 import { RegisterFormSchema } from "@/schemas/auth";

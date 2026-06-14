@@ -29,7 +29,7 @@ const MoviePosterCard: React.FC<MoviePosterCardProps> = ({ movie, variant = "ful
   const callback = useCallback(() => {
     handlers.open();
     setTimeout(() => startVibration([100]), 300);
-  }, []);
+  }, [handlers, startVibration]);
 
   const longPress = useLongPress(mobile ? callback : null, {
     cancelOnMovement: true,

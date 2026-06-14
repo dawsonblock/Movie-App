@@ -10,6 +10,7 @@ type GoogleLoginButtonProps = Omit<
   "children" | "startContent" | "onPress"
 >;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const supabase = createClient();
 
 const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ variant = "faded", ...props }) => {

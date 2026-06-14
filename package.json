@@ -12,7 +12,9 @@
     "electron:build": "next build && npm run electron:prepare",
     "electron:package": "npm run electron:build && electron-builder --mac dmg",
     "electron:dev": "npm run electron:build && electron .",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
     "security-guard": "node scripts/security-guard.mjs",
     "sb-start": "supabase start --debug --ignore-health-check",
     "sb-stop": "supabase stop --debug --all",
@@ -69,6 +71,12 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4.1.12",
     "typescript": "^5",
+    "vitest": "^3.0.0",
+    "@vitest/ui": "^3.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "jsdom": "^26.0.0",
+    "@vitejs/plugin-react": "^4.4.0",
     "webpack": "^5.101.2"
   },
   "build": {

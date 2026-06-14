@@ -25,7 +25,12 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // script-src: 'unsafe-inline' is still required by Next.js for inline scripts
+      // in the standalone output. Removing it breaks hydration.
+      // 'unsafe-eval' was intentionally removed for hardening; verify the app boots in
+      // production if you rely on dynamic code execution (e.g., eval or new Function).
+      "script-src 'self' 'unsafe-inline'",
+      // style-src: 'unsafe-inline' is required by HeroUI / Tailwind inline styles.
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://image.tmdb.org https://dancyflix.com https://wallpapercave.com",
       "font-src 'self' data:",

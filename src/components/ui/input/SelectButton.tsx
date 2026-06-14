@@ -1,6 +1,6 @@
 import { InputWrapperProps } from "@/types/component";
 import { isEmpty } from "@/utils/helpers";
-import { Input, Button, ButtonProps, ButtonGroup, cn } from "@heroui/react";
+import { Button, ButtonProps, ButtonGroup, cn } from "@heroui/react";
 import { useUncontrolled } from "@mantine/hooks";
 import React, { CSSProperties, PropsWithChildren, useCallback } from "react";
 import { kebabCase } from "string-ts";
@@ -73,7 +73,7 @@ const SelectButton = <T extends string = string>({
       if (disabled || (_value === value && !allowDeselect)) return;
       handleChange(_value === value && allowDeselect ? null : (value as T));
     },
-    [_value, allowDeselect],
+    [_value, allowDeselect, handleChange],
   );
 
   return (

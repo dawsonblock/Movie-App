@@ -10,7 +10,7 @@ import { sendResetPasswordEmail } from "@/actions/auth";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { env } from "@/utils/env";
 
-const AuthForgotPasswordForm: React.FC<AuthFormProps> = ({ setForm }) => {
+const AuthForgotPasswordForm: React.FC<AuthFormProps> = () => {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const {
@@ -64,7 +64,7 @@ const AuthForgotPasswordForm: React.FC<AuthFormProps> = ({ setForm }) => {
   return (
     <form className="flex flex-col gap-3" onSubmit={onSubmit}>
       <p className="text-small text-foreground-500 mb-4 text-center">
-        You'll receive an email with a link to reset your password
+        You&apos;ll receive an email with a link to reset your password
       </p>
       <Input
         {...register("email")}

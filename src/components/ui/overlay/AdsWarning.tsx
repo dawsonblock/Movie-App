@@ -68,7 +68,7 @@ const AdsWarning: React.FC = () => {
               >
                 AdGuard
               </Link>
-              . Please be aware that we don't have control over the ads displayed and cannot be held
+              . Please be aware that we don&apos;t have control over the ads displayed and cannot be held
               responsible for their content or any issues they may cause.
             </p>
           </ScrollShadow>

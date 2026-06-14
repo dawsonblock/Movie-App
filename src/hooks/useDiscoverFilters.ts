@@ -55,7 +55,7 @@ const useDiscoverFilters = () => {
         q.removeQueries({ queryKey: [key] });
       }
     });
-  }, [q]);
+  }, []);
 
   useEffect(() => {
     clearQueries();

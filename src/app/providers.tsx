@@ -8,7 +8,6 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { usePathname, useRouter } from "next/navigation";
 import useDiscoverFilters from "@/hooks/useDiscoverFilters";
 

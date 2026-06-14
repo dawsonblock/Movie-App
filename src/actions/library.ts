@@ -23,7 +23,7 @@ interface WatchlistEntry extends WatchlistItem {
   created_at: string;
 }
 
-interface ActionResponse<T = any> {
+interface ActionResponse<T = unknown> {
   success: boolean;
   error?: string;
   message?: string;

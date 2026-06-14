@@ -47,11 +47,12 @@ export interface UnifiedPlayerEventData {
   progress?: number;
 }
 
-export interface PlayerAdapter<RawMessage extends BasePlayerEventEnvelope<any>> {
+export interface PlayerAdapter<RawMessage extends BasePlayerEventEnvelope<any>> { // eslint-disable-line @typescript-eslint/no-explicit-any
   origin: `https://${string}`;
   parse: (raw: RawMessage) => UnifiedPlayerEventData | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AdapterMap = Record<string, PlayerAdapter<any>>;
 
 export const playerAdapters = {
@@ -101,7 +102,7 @@ export interface UsePlayerEventsOptions {
 
 export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
   const documentState = useDocumentVisibility();
-  const { media, metadata, saveHistory, onPlay, onPause, onSeeked, onEnded, onTimeUpdate } = options;
+  // Destructured values are accessed via optionsRef.current to avoid stale closures
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -171,6 +172,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
       const adapter = Object.values(playerAdapters).find((a) => a.origin === event.origin);
       if (!adapter) return;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawData: any;
       try {
         rawData = typeof event.data === "string" ? JSON.parse(event.data) : event.data;

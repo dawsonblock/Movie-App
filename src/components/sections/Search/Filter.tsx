@@ -57,14 +57,14 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ isLoading, onSearchSubmit, 
         setSearchHistories(newHistories);
       }
     },
-    [searchQuery, searchHistories],
+    [searchQuery, searchHistories, onSearchSubmit, setSearchHistories],
   );
 
   const handleClear = useCallback(() => {
     setSearchQuery("");
     setTriggered(false);
     onSearchSubmit?.("");
-  }, []);
+  }, [onSearchSubmit, setSearchQuery]);
 
   return (
     <form

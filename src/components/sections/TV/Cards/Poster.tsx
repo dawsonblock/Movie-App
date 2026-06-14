@@ -29,7 +29,7 @@ const TvShowPosterCard: React.FC<TvShowPosterCardProps> = ({ tv, variant = "full
   const callback = useCallback(() => {
     handlers.open();
     setTimeout(() => startVibration([100]), 300);
-  }, []);
+  }, [handlers, startVibration]);
 
   const longPress = useLongPress(mobile ? callback : null, {
     cancelOnMovement: true,

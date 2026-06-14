@@ -68,7 +68,7 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, startAt }) => {
           <Skeleton className="absolute h-full w-full" />
           {seen && (
             <SafeThirdPartyFrame
-              key={PLAYER.title}
+              key={PLAYER.source}
               src={PLAYER.source}
               title={PLAYER.title}
               className={cn("z-10", { "pointer-events-none": idle && !mobile })}

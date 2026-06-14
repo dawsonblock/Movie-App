@@ -6,7 +6,7 @@
  * This module feeds:
  * - CSP `frame-src` via ALLOWED_PLAYER_FRAME_SRC (next.config.ts)
  * - Runtime iframe validation via isAllowedPlayerUrl (SafeThirdPartyFrame)
- * - Player URL construction via createPlayerSource (players.ts)
+ * - Player URL construction via createPlayerSource (utils/players.ts)
  *
  * What CSP blocks:
  * - Loading iframe players from unapproved domains (frame-src)
@@ -41,23 +41,14 @@
 import { PlayersProps } from "@/types";
 
 export const ALLOWED_PLAYER_ORIGINS = [
+  // Trusted platforms (no aggressive ads / overlays)
   "https://www.youtube.com",
   "https://www.youtube-nocookie.com",
   "https://player.vimeo.com",
+  // Curated aggregators — monitored for hostile behavior
   "https://vidlink.pro",
   "https://www.vidking.net",
-  "https://embed.su",
-  "https://multiembed.mov",
   "https://filmku.stream",
-  "https://www.nontongo.win",
-  "https://autoembed.co",
-  "https://player.autoembed.cc",
-  "https://www.2embed.cc",
-  "https://vidsrc.xyz",
-  "https://vidsrc.to",
-  "https://vidsrc.icu",
-  "https://vidsrc.cc",
-  "https://moviesapi.club",
 ] as const;
 
 export type AllowedPlayerOrigin = (typeof ALLOWED_PLAYER_ORIGINS)[number];

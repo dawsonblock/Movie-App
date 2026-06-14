@@ -53,7 +53,6 @@ export function syncLocalHistory(
 ): ActionResponse {
   try {
     const history = getHistory();
-    const key = `${data.mediaId}-${data.mediaType}-${data.season || 0}-${data.episode || 0}`;
     const existingIndex = history.findIndex(
       (h) =>
         h.media_id === Number(data.mediaId) &&

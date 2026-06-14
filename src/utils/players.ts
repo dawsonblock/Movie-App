@@ -48,81 +48,8 @@ export const getMoviePlayers = (id: string | number, startAt?: number): PlayersP
       resumable: true,
     },
     {
-      title: "<Embed>",
-      source: createPlayerSource("https://embed.su", `/embed/movie/${id}`),
-      ads: true,
-    },
-    {
-      title: "SuperEmbed",
-      source: createPlayerSource(
-        "https://multiembed.mov",
-        `/directstream.php?video_id=${id}&tmdb=1`,
-      ),
-      fast: true,
-      ads: true,
-    },
-    {
       title: "FilmKu",
       source: createPlayerSource("https://filmku.stream", `/embed/${id}`),
-      ads: true,
-    },
-    {
-      title: "NontonGo",
-      source: createPlayerSource("https://www.nontongo.win", `/embed/movie/${id}`),
-      ads: true,
-    },
-    {
-      title: "AutoEmbed 1",
-      source: createPlayerSource("https://autoembed.co", `/movie/tmdb/${id}`),
-      fast: true,
-      ads: true,
-    },
-    {
-      title: "AutoEmbed 2",
-      source: createPlayerSource("https://player.autoembed.cc", `/embed/movie/${id}`),
-      ads: true,
-    },
-    {
-      title: "2Embed",
-      source: createPlayerSource("https://www.2embed.cc", `/embed/${id}`),
-      ads: true,
-    },
-    {
-      title: "VidSrc 1",
-      source: createPlayerSource("https://vidsrc.xyz", `/embed/movie/${id}`),
-      ads: true,
-    },
-    {
-      title: "VidSrc 2",
-      source: createPlayerSource("https://vidsrc.to", `/embed/movie/${id}`),
-      ads: true,
-    },
-    {
-      title: "VidSrc 3",
-      source: createPlayerSource("https://vidsrc.icu", `/embed/movie/${id}`),
-      ads: true,
-    },
-    {
-      title: "VidSrc 4",
-      source: createPlayerSource(
-        "https://vidsrc.cc",
-        `/v2/embed/movie/${id}?autoPlay=false`,
-      ),
-      ads: true,
-    },
-    {
-      title: "VidSrc 5",
-      source: createPlayerSource(
-        "https://vidsrc.cc",
-        `/v3/embed/movie/${id}?autoPlay=false`,
-      ),
-      recommended: true,
-      fast: true,
-      ads: true,
-    },
-    {
-      title: "MoviesAPI",
-      source: createPlayerSource("https://moviesapi.club", `/movie/${id}`),
       ads: true,
     },
   ];
@@ -182,110 +109,10 @@ export const getTvShowPlayers = (
       resumable: true,
     },
     {
-      title: "<Embed>",
-      source: createPlayerSource(
-        "https://embed.su",
-        `/embed/tv/${id}/${season}/${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "SuperEmbed",
-      source: createPlayerSource(
-        "https://multiembed.mov",
-        `/directstream.php?video_id=${id}&tmdb=1&s=${season}&e=${episode}`,
-      ),
-      fast: true,
-      ads: true,
-    },
-    {
       title: "FilmKu",
       source: createPlayerSource(
         "https://filmku.stream",
         `/embed/series?tmdb=${id}&sea=${season}&epi=${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "NontonGo",
-      source: createPlayerSource(
-        "https://www.nontongo.win",
-        `/embed/tv/${id}/${season}/${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "AutoEmbed 1",
-      source: createPlayerSource(
-        "https://autoembed.co",
-        `/tv/tmdb/${id}-${season}-${episode}`,
-      ),
-      fast: true,
-      ads: true,
-    },
-    {
-      title: "AutoEmbed 2",
-      source: createPlayerSource(
-        "https://player.autoembed.cc",
-        `/embed/tv/${id}/${season}/${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "2Embed",
-      source: createPlayerSource(
-        "https://www.2embed.cc",
-        `/embedtv/${id}&s=${season}&e=${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "VidSrc 1",
-      source: createPlayerSource(
-        "https://vidsrc.xyz",
-        `/embed/tv/${id}/${season}/${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "VidSrc 2",
-      source: createPlayerSource(
-        "https://vidsrc.to",
-        `/embed/tv/${id}/${season}/${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "VidSrc 3",
-      source: createPlayerSource(
-        "https://vidsrc.icu",
-        `/embed/tv/${id}/${season}/${episode}`,
-      ),
-      ads: true,
-    },
-    {
-      title: "VidSrc 4",
-      source: createPlayerSource(
-        "https://vidsrc.cc",
-        `/v2/embed/tv/${id}/${season}/${episode}?autoPlay=false`,
-      ),
-      ads: true,
-    },
-    {
-      title: "VidSrc 5",
-      source: createPlayerSource(
-        "https://vidsrc.cc",
-        `/v3/embed/tv/${id}/${season}/${episode}?autoPlay=false`,
-      ),
-      recommended: true,
-      fast: true,
-      ads: true,
-    },
-    {
-      title: "MoviesAPI",
-      source: createPlayerSource(
-        "https://moviesapi.club",
-        `/tv/${id}-${season}-${episode}`,
       ),
       ads: true,
     },

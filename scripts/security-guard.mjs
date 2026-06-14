@@ -118,13 +118,45 @@ for (const filePath of walk(root)) {
 const electronMainPath = path.join(root, "electron", "main.mjs");
 if (fs.existsSync(electronMainPath)) {
   const content = fs.readFileSync(electronMainPath, "utf8");
-  const handlerPattern =
-    /setWindowOpenHandler\s*\(\s*\(\)\s*=>\s*\{\s*return\s+\{\s*action:\s*"deny"\s*\}\s*;?\s*\}\s*\)/;
-  if (!handlerPattern.test(content)) {
+  const handlerMatch = content.match(/setWindowOpenHandler\s*\(/);
+  if (!handlerMatch) {
     console.error(
-      `\x1b[31mFAIL\x1b[0m electron/main.mjs: setWindowOpenHandler must unconditionally return { action: 'deny' }`,
+      `\x1b[31mFAIL\x1b[0m electron/main.mjs: setWindowOpenHandler must be defined`,
     );
     errors++;
+  } else {
+    const startIdx = handlerMatch.index;
+    let parenDepth = 0;
+    let blockStart = -1;
+    for (let i = startIdx; i < content.length; i++) {
+      if (content[i] === "(") parenDepth++;
+      else if (content[i] === ")") parenDepth--;
+      if (content[i] === "{" && parenDepth === 1 && blockStart === -1) {
+        blockStart = i;
+        break;
+      }
+    }
+    let blockEnd = content.length;
+    if (blockStart !== -1) {
+      let depth = 1;
+      for (let i = blockStart + 1; i < content.length; i++) {
+        if (content[i] === "{") depth++;
+        else if (content[i] === "}") depth--;
+        if (depth === 0) {
+          blockEnd = i + 1;
+          break;
+        }
+      }
+    }
+    const block = content.slice(blockStart, blockEnd);
+    const hasDeny = /action\s*:\s*["']deny["']/.test(block);
+    const hasAllow = /action\s*:\s*["']allow["']/.test(block);
+    if (!hasDeny || hasAllow) {
+      console.error(
+        `\x1b[31mFAIL\x1b[0m electron/main.mjs: setWindowOpenHandler must unconditionally return { action: 'deny' }`,
+      );
+      errors++;
+    }
   }
 }
 

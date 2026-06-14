@@ -2,7 +2,7 @@ import { signIn } from "@/actions/auth";
 import PasswordInput from "@/components/ui/input/PasswordInput";
 import { LoginFormSchema } from "@/schemas/auth";
 import { isEmpty } from "@/utils/helpers";
-import { Google, LockPassword, Mail } from "@/utils/icons";
+import { LockPassword, Mail } from "@/utils/icons";
 import { addToast, Button, Divider, Input, Link } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Turnstile } from "@marsidev/react-turnstile";
@@ -131,7 +131,7 @@ const AuthLoginForm: React.FC<AuthFormProps> = ({ setForm }) => {
       </div>
       <GoogleLoginButton isDisabled={isSubmitting || isVerifying} />
       <p className="text-small text-center">
-        Don't have an account?
+        Don&apos;t have an account?
         <Link
           isBlock
           size="sm"

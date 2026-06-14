@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Sandboxed wrapper for third-party player iframes.
  *
@@ -9,6 +11,7 @@
  */
 import { isAllowedPlayerUrl, UNIVERSAL_IFRAME_SANDBOX } from "@/config/allowedPlayerHosts";
 import { cn } from "@/utils/helpers";
+import { useState } from "react";
 
 type SafeThirdPartyFrameProps = {
   src: string;
@@ -17,6 +20,8 @@ type SafeThirdPartyFrameProps = {
 };
 
 export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFrameProps) {
+  const [dismissed, setDismissed] = useState(false);
+
   if (!isAllowedPlayerUrl(src)) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-black text-white">
@@ -26,14 +31,38 @@ export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFra
   }
 
   return (
-    <iframe
-      src={src}
-      title={title}
-      className={cn("h-full w-full", className)}
-      allowFullScreen
-      referrerPolicy="no-referrer"
-      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-      sandbox={UNIVERSAL_IFRAME_SANDBOX}
-    />
+    <div className="relative h-full w-full">
+      <iframe
+        src={src}
+        title={title}
+        className={cn("h-full w-full", className)}
+        allowFullScreen
+        referrerPolicy="no-referrer"
+        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+        sandbox={UNIVERSAL_IFRAME_SANDBOX}
+      />
+      {!dismissed && (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Dismiss overlay and interact with player"
+          className="absolute inset-0 z-20 flex cursor-pointer flex-col items-center justify-center bg-black/60 text-white backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setDismissed(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              setDismissed(true);
+            }
+          }}
+        >
+          <p className="max-w-md px-6 text-center text-lg font-semibold">
+            Click to start watching
+          </p>
+          <p className="mt-2 max-w-md px-6 text-center text-sm text-gray-300">
+            Beware of fake buttons or ads inside the player. If you see suspicious
+            popups, switch to another source.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
