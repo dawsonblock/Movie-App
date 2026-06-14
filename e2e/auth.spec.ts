@@ -104,4 +104,113 @@ test.describe('Authentication Flow', () => {
     // Should redirect to home or auth page
     await expect(page).toHaveURL(/.*\/(auth|\/)/);
   });
+
+  test('should show Google OAuth button', async ({ page }) => {
+    await page.click('text=Sign In');
+    await page.click('text=Sign Up');
+    
+    // Google OAuth button should be visible
+    await expect(page.locator('text=Continue with Google')).toBeVisible();
+  });
+
+  test('should display user profile after sign in', async ({ page }) => {
+    // Sign in with test credentials
+    await page.click('text=Sign In');
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="loginPassword"]', 'password123');
+    await page.click('button[type="submit"]');
+    
+    // Wait for successful sign in
+    await page.waitForURL('/');
+    
+    // User profile button should show username instead of "Guest"
+    await expect(page.locator('text=Guest')).not.toBeVisible();
+  });
+
+  test('should show sign in button when not authenticated', async ({ page }) => {
+    // On home page, should show sign in button
+    await expect(page.locator('text=Sign In')).toBeVisible();
+  });
+
+  test('should hide sign in button when authenticated', async ({ page }) => {
+    // Sign in
+    await page.click('text=Sign In');
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="loginPassword"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+    
+    // Sign in button should be hidden
+    await expect(page.locator('text=Sign In')).not.toBeVisible();
+  });
+
+  test('should allow adding to watchlist when authenticated', async ({ page }) => {
+    // Sign in
+    await page.click('text=Sign In');
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="loginPassword"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+    
+    // Navigate to a movie
+    await page.goto('/movie/123');
+    
+    // Bookmark button should be clickable
+    const bookmarkButton = page.locator('[aria-label*="Watchlist"]');
+    await expect(bookmarkButton).toBeEnabled();
+  });
+
+  test('should show profile button in bottom nav on mobile', async ({ page }) => {
+    // Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 });
+    
+    // Sign in
+    await page.click('text=Sign In');
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="loginPassword"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+    
+    // Profile button should be visible in bottom nav
+    await expect(page.locator('text=Profile')).toBeVisible();
+  });
+
+  test('should persist session across page navigation', async ({ page }) => {
+    // Sign in
+    await page.click('text=Sign In');
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="loginPassword"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+    
+    // Navigate to different pages
+    await page.goto('/discover');
+    await page.goto('/library');
+    await page.goto('/search');
+    
+    // User should still be authenticated
+    await expect(page.locator('text=Guest')).not.toBeVisible();
+  });
+
+  test('should handle session expiration gracefully', async ({ page }) => {
+    // This test would require mocking session expiration
+    // For now, we'll test the sign out flow
+    
+    // Sign in first
+    await page.click('text=Sign In');
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="loginPassword"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+    
+    // Sign out
+    await page.click('[aria-label="Profile"]');
+    await page.click('text=Sign Out');
+    
+    // Should return to auth page or home
+    await expect(page).toHaveURL(/.*\/(auth|\/)/);
+    
+    // Should show sign in button again
+    await expect(page.locator('text=Sign In')).toBeVisible();
+  });
 });

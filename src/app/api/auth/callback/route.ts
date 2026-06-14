@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { IS_DEVELOPMENT } from "@/utils/constants";
+import { performMigration } from "@/utils/migration";
 
 export const GET = async (request: Request) => {
   const { searchParams, origin } = new URL(request.url);
@@ -79,6 +80,12 @@ export const GET = async (request: Request) => {
             console.log("Profile created with username:", uniqueUsername);
           }
         }
+        
+        // Perform localStorage migration in the background
+        // This won't block the OAuth callback
+        performMigration().catch((migrationError) => {
+          console.error("Background migration failed:", migrationError);
+        });
       }
 
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer

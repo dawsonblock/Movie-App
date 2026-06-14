@@ -8,10 +8,10 @@ import { Trash } from "@/utils/icons";
 import useDeviceVibration from "@/hooks/useDeviceVibration";
 import { SavedMovieDetails } from "@/types/movie";
 import {
-  addToLibrary,
-  removeFromLibrary,
-  checkInLibrary,
-} from "@/utils/localStorage/library";
+  addToWatchlist,
+  removeFromWatchlist,
+  checkInWatchlist,
+} from "@/actions/library";
 import { queryClient } from "@/app/providers";
 import { usePathname } from "next/navigation";
 
@@ -28,18 +28,30 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ data, isTooltipDisabled
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    setIsChecking(true);
-    const result = checkInLibrary(data.id, data.type);
-    if (result.success) {
-      setIsSaved(result.isInLibrary);
-    }
-    setIsChecking(false);
+    let isMounted = true;
+    
+    const checkWatchlistStatus = async () => {
+      setIsChecking(true);
+      const result = await checkInWatchlist(data.id, data.type);
+      if (isMounted && result.success) {
+        setIsSaved(result.isInWatchlist);
+      }
+      if (isMounted) {
+        setIsChecking(false);
+      }
+    };
+    
+    checkWatchlistStatus();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [data.id, data.type]);
 
-  const handleBookmark = () => {
-    startTransition(() => {
+  const handleBookmark = async () => {
+    startTransition(async () => {
       if (isSaved) {
-        const result = removeFromLibrary(data.id, data.type);
+        const result = await removeFromWatchlist(data.id, data.type);
         if (result.success) {
           setIsSaved(false);
           addToast({
@@ -58,7 +70,16 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ data, isTooltipDisabled
           });
         }
       } else {
-        const result = addToLibrary(data);
+        const result = await addToWatchlist({
+          id: data.id,
+          type: data.type,
+          adult: data.adult,
+          backdrop_path: data.backdrop_path,
+          poster_path: data.poster_path,
+          release_date: data.release_date,
+          title: data.title,
+          vote_average: data.vote_average,
+        });
         if (result.success) {
           setIsSaved(true);
           startVibration([100]);

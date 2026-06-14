@@ -23,30 +23,35 @@ export const siteConfig: SiteConfigType = {
       href: "/",
       icon: <GoHome className="size-full" />,
       activeIcon: <GoHomeFill className="size-full" />,
+      showInBottomNav: true,
     },
     {
       label: "Discover",
       href: "/discover",
       icon: <IoCompassOutline className="size-full" />,
       activeIcon: <IoCompass className="size-full" />,
+      showInBottomNav: true,
     },
     {
       label: "Search",
       href: "/search",
       icon: <BiSearchAlt2 className="size-full" />,
       activeIcon: <BiSolidSearchAlt2 className="size-full" />,
+      showInBottomNav: true,
     },
     {
       label: "Library",
       href: "/library",
       icon: <TbFolder className="size-full" />,
       activeIcon: <TbFolderFilled className="size-full" />,
+      showInBottomNav: true,
     },
     {
       label: "About",
       href: "/about",
       icon: <IoInformationCircleOutline className="size-full" />,
       activeIcon: <IoInformationCircle className="size-full" />,
+      showInBottomNav: false,
     },
   ],
   themes: [
@@ -109,19 +114,16 @@ export const siteConfig: SiteConfigType = {
       },
       {
         name: "Popular TV Shows",
-        // @ts-expect-error: Property 'adult' is missing in type 'PopularTvShowResult' but required in type 'TV'.
         query: () => tmdb.tvShows.popular(),
         param: "popular",
       },
       {
         name: "On The Air TV Shows",
-        // @ts-expect-error: Property 'adult' is missing in type 'OnTheAirResult' but required in type 'TV'.
         query: () => tmdb.tvShows.onTheAir(),
         param: "onTheAir",
       },
       {
         name: "Top Rated TV Shows",
-        // @ts-expect-error: Property 'adult' is missing in type 'TopRatedTvShowResult' but required in type 'TV'.
         query: () => tmdb.tvShows.topRated(),
         param: "topRated",
       },

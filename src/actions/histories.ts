@@ -51,10 +51,26 @@ export const syncHistory = async (
       };
     }
 
-    const media =
-      data.mediaType === "movie"
-        ? await tmdb.movies.details(Number(data.mediaId))
-        : await tmdb.tvShows.details(Number(data.mediaId));
+    let media;
+    try {
+      media =
+        data.mediaType === "movie"
+          ? await tmdb.movies.details(Number(data.mediaId))
+          : await tmdb.tvShows.details(Number(data.mediaId));
+    } catch (error) {
+      console.error("TMDB API error:", error);
+      return {
+        success: false,
+        message: "Failed to fetch media details from TMDB",
+      };
+    }
+
+    if (!media) {
+      return {
+        success: false,
+        message: "Media not found",
+      };
+    }
 
     // Insert or update history
     const { data: history, error } = await supabase
@@ -69,11 +85,11 @@ export const syncHistory = async (
           duration: data.duration,
           last_position: data.currentTime,
           completed: completed || false,
-          adult: "adult" in media ? media.adult : false,
+          adult: data.mediaType === "movie" ? (media as any).adult : false,
           backdrop_path: media.backdrop_path,
           poster_path: media.poster_path,
-          release_date: "release_date" in media ? media.release_date : media.first_air_date,
-          title: "title" in media ? mutateMovieTitle(media) : mutateTvShowTitle(media),
+          release_date: data.mediaType === "movie" ? (media as any).release_date : (media as any).first_air_date,
+          title: data.mediaType === "movie" ? mutateMovieTitle(media as any) : mutateTvShowTitle(media as any),
           vote_average: media.vote_average,
         },
         {
@@ -150,7 +166,7 @@ export const getUserHistories = async (limit: number = 20): ActionResponse<Histo
   }
 };
 
-export const getMovieLastPosition = async (id: number): Promise<number> => {
+export const getMovieLastPosition = async (id: number): Promise<number | undefined> => {
   try {
     const supabase = await createClient();
 
@@ -161,7 +177,7 @@ export const getMovieLastPosition = async (id: number): Promise<number> => {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return 0;
+      return undefined;
     }
 
     const { data, error } = await supabase
@@ -173,13 +189,13 @@ export const getMovieLastPosition = async (id: number): Promise<number> => {
 
     if (error) {
       console.info("History fetch error:", error);
-      return 0;
+      return undefined;
     }
 
     return data?.[0]?.last_position || 0;
   } catch (error) {
     console.info("Unexpected error:", error);
-    return 0;
+    return undefined;
   }
 };
 
@@ -187,7 +203,7 @@ export const getTvShowLastPosition = async (
   id: number,
   season: number,
   episode: number,
-): Promise<number> => {
+): Promise<number | undefined> => {
   try {
     const supabase = await createClient();
 
@@ -198,7 +214,7 @@ export const getTvShowLastPosition = async (
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return 0;
+      return undefined;
     }
 
     const { data, error } = await supabase
@@ -212,12 +228,12 @@ export const getTvShowLastPosition = async (
 
     if (error) {
       console.info("History fetch error:", error);
-      return 0;
+      return undefined;
     }
 
     return data?.[0]?.last_position || 0;
   } catch (error) {
     console.info("Unexpected error:", error);
-    return 0;
+    return undefined;
   }
 };

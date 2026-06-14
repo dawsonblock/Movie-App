@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  getLibraryItems,
-  removeAllLibrary,
-  WatchlistEntry,
-} from "@/utils/localStorage/library";
+  getWatchlist,
+  removeAllWatchlist,
+  type WatchlistEntry,
+} from "@/actions/library";
 import { queryClient } from "@/app/providers";
 import BackToTopButton from "@/components/ui/button/BackToTopButton";
 import ContentTypeSelection from "@/components/ui/other/ContentTypeSelection";
@@ -42,7 +42,7 @@ const LibraryList = () => {
     useInfiniteQuery({
       queryKey: ["watchlist", content],
       queryFn: async ({ pageParam = 1 }) => {
-        return getLibraryItems(content as FilterType, pageParam, ITEMS_PER_PAGE);
+        return getWatchlist(content as FilterType, pageParam, ITEMS_PER_PAGE);
       },
       initialPageParam: 1,
       getNextPageParam: (lastPage, pages) => {
@@ -62,16 +62,16 @@ const LibraryList = () => {
 
   const clearWatchlistMutation = useMutation({
     mutationFn: async (type: "movie" | "tv") => {
-      const result = removeAllLibrary(type);
+      const result = await removeAllWatchlist(type);
       if (!result.success) {
         throw new Error(result.error || "Failed to clear watchlist");
       }
-      return { type, count: result.data ?? 0 };
+      return { type };
     },
-    onSuccess: ({ type, count }) => {
+    onSuccess: ({ type }) => {
       queryClient.invalidateQueries({ queryKey: ["watchlist"] });
       addToast({
-        title: `Cleared ${count} ${type === "movie" ? "movies" : "TV shows"} from your watchlist!`,
+        title: `Cleared ${type === "movie" ? "movies" : "TV shows"} from your watchlist!`,
         color: "success",
         icon: <Trash />,
       });
@@ -96,7 +96,7 @@ const LibraryList = () => {
   const sortedWatchlist = useMemo(() => {
     if (!data?.pages) return [];
     const allItems = data.pages.flatMap((page) => page.data || []);
-    return [...allItems].sort((a: WatchlistEntry, b: WatchlistEntry) => {
+    return [...allItems].sort((a, b) => {
       switch (sortOption) {
         case "vote_average":
         case "release_date":

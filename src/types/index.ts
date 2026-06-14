@@ -47,6 +47,7 @@ export type SiteConfigType = {
     href: string;
     icon: React.ReactNode;
     activeIcon: React.ReactNode;
+    showInBottomNav?: boolean;
   }[];
   queryLists: {
     movies: QueryList<Movie>[];

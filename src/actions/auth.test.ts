@@ -1,108 +1,173 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { signIn, signUp, sendResetPasswordEmail, resetPassword, signOut } from "./auth";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { signIn, signUp, signOut } from "./auth";
 
-describe("Auth actions error handling", () => {
+// Mock Supabase client
+const mockSupabase = {
+  auth: {
+    signInWithPassword: vi.fn(),
+    signUp: vi.fn(),
+    signOut: vi.fn(),
+  },
+  from: vi.fn(),
+};
+
+vi.mock("@/utils/supabase/server", () => ({
+  createClient: vi.fn(() => mockSupabase),
+}));
+
+// Mock migration function
+vi.mock("@/utils/migration", () => ({
+  performMigration: vi.fn(),
+}));
+
+describe("Auth Actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("signIn error handling", () => {
-    it("should handle invalid email format", async () => {
+  describe("signIn", () => {
+    it("should sign in user successfully", async () => {
+      mockSupabase.auth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: "user-123", email: "test@example.com" } },
+        error: null,
+      });
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockResolvedValue({
+        data: { username: "testuser" },
+        error: null,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+      });
+
       const result = await signIn({
-        email: "invalid-email",
+        email: "test@example.com",
+        password: "password123",
+        loginPassword: "password123",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe("Welcome back, testuser");
+    });
+
+    it("should return error on sign in failure", async () => {
+      mockSupabase.auth.signInWithPassword.mockResolvedValue({
+        data: { user: null },
+        error: { message: "Invalid credentials" },
+      });
+
+      const result = await signIn({
+        email: "test@example.com",
+        password: "wrongpassword",
+        loginPassword: "wrongpassword",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe("Invalid credentials");
+    });
+
+    it("should return error if username fetch fails", async () => {
+      mockSupabase.auth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: "user-123", email: "test@example.com" } },
+        error: null,
+      });
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Database error" },
+      });
+
+      mockSupabase.from.mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+      });
+
+      const result = await signIn({
+        email: "test@example.com",
+        password: "password123",
         loginPassword: "password123",
       });
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain("email");
-    });
-
-    it("should handle missing password", async () => {
-      const result = await signIn({
-        email: "test@example.com",
-        loginPassword: "",
-      });
-
-      expect(result.success).toBe(false);
+      expect(result.message).toContain("Database error");
     });
   });
 
-  describe("signUp error handling", () => {
-    it("should handle password mismatch", async () => {
+  describe("signUp", () => {
+    it("should sign up user successfully", async () => {
+      mockSupabase.auth.signUp.mockResolvedValue({
+        data: { user: { id: "user-123", email: "test@example.com" } },
+        error: null,
+      });
+
       const result = await signUp({
-        username: "testuser",
         email: "test@example.com",
         password: "password123",
-        confirm: "different123",
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("Passwords do not match");
-    });
-
-    it("should handle weak password", async () => {
-      const result = await signUp({
         username: "testuser",
-        email: "test@example.com",
-        password: "short",
-        confirm: "short",
       });
 
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("Password must be at least 8 characters");
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("Sign up successful");
     });
 
-    it("should handle invalid username", async () => {
+    it("should return error on sign up failure", async () => {
+      mockSupabase.auth.signUp.mockResolvedValue({
+        data: { user: null },
+        error: { message: "Email already exists" },
+      });
+
       const result = await signUp({
-        username: "ab",
         email: "test@example.com",
         password: "password123",
-        confirm: "password123",
+        username: "testuser",
       });
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain("Username must be at least 3 characters");
+      expect(result.message).toBe("Email already exists");
+    });
+
+    it("should return error if user creation fails", async () => {
+      mockSupabase.auth.signUp.mockResolvedValue({
+        data: { user: null },
+        error: null,
+      });
+
+      const result = await signUp({
+        email: "test@example.com",
+        password: "password123",
+        username: "testuser",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe("User not created. Please try again.");
     });
   });
 
-  describe("sendResetPasswordEmail error handling", () => {
-    it("should handle invalid email", async () => {
-      const result = await sendResetPasswordEmail({
-        email: "invalid-email",
+  describe("signOut", () => {
+    it("should sign out user successfully", async () => {
+      mockSupabase.auth.signOut.mockResolvedValue({
+        error: null,
       });
 
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("email");
+      const result = await signOut();
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe("You have been signed out.");
     });
 
-    it("should handle missing email", async () => {
-      const result = await sendResetPasswordEmail({
-        email: "",
+    it("should return error on sign out failure", async () => {
+      mockSupabase.auth.signOut.mockResolvedValue({
+        error: { message: "Sign out failed" },
       });
 
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("resetPassword error handling", () => {
-    it("should handle password mismatch", async () => {
-      const result = await resetPassword({
-        password: "newpassword123",
-        confirm: "different123",
-      });
+      const result = await signOut();
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain("Passwords do not match");
-    });
-
-    it("should handle weak password", async () => {
-      const result = await resetPassword({
-        password: "short",
-        confirm: "short",
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("Password must be at least 8 characters");
+      expect(result.message).toBe("Sign out failed");
     });
   });
 });

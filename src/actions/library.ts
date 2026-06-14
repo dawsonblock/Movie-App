@@ -18,7 +18,7 @@ interface WatchlistItem {
   vote_average: number;
 }
 
-interface WatchlistEntry extends WatchlistItem {
+export interface WatchlistEntry extends WatchlistItem {
   user_id: string;
   created_at: string;
 }
@@ -85,7 +85,7 @@ export async function addToWatchlist(item: WatchlistItem): Promise<ActionRespons
         id: item.id,
         type: item.type,
         adult: item.adult || false,
-        backdrop_path: item.backdrop_path || "",
+        backdrop_path: item.backdrop_path || null,
         poster_path: item.poster_path || null,
         release_date: item.release_date || new Date().toISOString().split("T")[0],
         title: item.title,

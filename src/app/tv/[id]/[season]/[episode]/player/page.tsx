@@ -8,13 +8,17 @@ import { notFound } from "next/navigation";
 import { use } from "react";
 import dynamic from "next/dynamic";
 import { NextPage } from "next";
-import { getTvShowLastPosition } from "@/utils/localStorage/history";
+import { getTvShowLastPosition } from "@/actions/histories";
+import { getTvShowLastPosition as getLocalTvShowLastPosition } from "@/utils/localStorage/history";
+import { useEffect, useState } from "react";
+
 const TvShowPlayer = dynamic(() => import("@/components/sections/TV/Player/Player"));
 
 const TvShowPlayerPage: NextPage<Params<{ id: number; season: number; episode: number }>> = ({
   params,
 }) => {
   const { id, season, episode } = use(params);
+  const [startAt, setStartAt] = useState(0);
 
   const {
     data: tv,
@@ -34,9 +38,25 @@ const TvShowPlayerPage: NextPage<Params<{ id: number; season: number; episode: n
     queryKey: ["tv-show-season", id, season],
   });
 
-  const startAt = getTvShowLastPosition(id, season, episode);
+  const {
+    data: serverStartAt,
+    isPending: isPendingStartAt,
+  } = useQuery({
+    queryFn: () => getTvShowLastPosition(id, season, episode),
+    queryKey: ["tv-last-position", id, season, episode],
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
-  if (isPendingTv || isPendingSeason) {
+  useEffect(() => {
+    // Use server position if available (authenticated user), otherwise fall back to localStorage
+    if (serverStartAt !== undefined) {
+      setStartAt(serverStartAt);
+    } else {
+      setStartAt(getLocalTvShowLastPosition(id, season, episode));
+    }
+  }, [serverStartAt, id, season, episode]);
+
+  if (isPendingTv || isPendingSeason || isPendingStartAt) {
     return <Spinner size="lg" className="absolute-center" color="warning" variant="simple" />;
   }
 

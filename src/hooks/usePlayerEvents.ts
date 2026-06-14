@@ -1,9 +1,13 @@
 import { z } from "zod";
-import { syncLocalHistory } from "@/utils/localStorage/history";
+import { syncHistory } from "@/actions/histories";
 import { ContentType } from "@/types";
 import { diff } from "@/utils/helpers";
 import { useDocumentVisibility } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
+import { syncLocalHistory } from "@/utils/localStorage/history";
+import { addToast } from "@heroui/react";
+
+// ==================== Schema Definitions ====================
 
 export const PlayerEventTypeSchema = z.enum([
   "play",
@@ -45,6 +49,8 @@ const VidkingMessageSchema = z.object({
   data: VidkingEventSchema,
 });
 
+// ==================== Type Definitions ====================
+
 export interface UnifiedPlayerEventData {
   event: PlayerEventType;
   currentTime: number;
@@ -62,6 +68,8 @@ export interface PlayerAdapter {
 }
 
 export type AdapterMap = Record<string, PlayerAdapter>;
+
+// ==================== Player Adapters ====================
 
 export const playerAdapters = {
   vidlink: {
@@ -102,6 +110,8 @@ export const playerAdapters = {
   } satisfies PlayerAdapter,
 } as const satisfies AdapterMap;
 
+// ==================== Hook Options ====================
+
 export interface UsePlayerEventsOptions {
   media?: {
     id: number;
@@ -121,87 +131,109 @@ export interface UsePlayerEventsOptions {
   onTimeUpdate?: (data: UnifiedPlayerEventData) => void;
 }
 
+// ==================== Helper Functions ====================
+
+/**
+ * Parse message data from a player iframe
+ */
+function parsePlayerMessage(event: MessageEvent): UnifiedPlayerEventData | null {
+  const adapter = Object.values(playerAdapters).find((a) => a.origin === event.origin);
+  if (!adapter) return null;
+
+  let rawData: unknown;
+  try {
+    rawData = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+  } catch (err) {
+    console.warn("Invalid JSON from player:", err);
+    return null;
+  }
+
+  return adapter.parse(rawData);
+}
+
+/**
+ * Sync player event data to storage (Supabase with localStorage fallback)
+ */
+async function syncToStorage(
+  data: UnifiedPlayerEventData,
+  options: UsePlayerEventsOptions,
+  lastCurrentTimeRef: React.MutableRefObject<number>,
+  completed?: boolean,
+): Promise<void> {
+  if (!options.saveHistory || !options.media) return;
+  if (diff(data.currentTime, lastCurrentTimeRef.current) <= 5) return;
+
+  const payload: UnifiedPlayerEventData = {
+    ...data,
+    season: data.season ?? options.metadata?.season ?? 0,
+    episode: data.episode ?? options.metadata?.episode ?? 0,
+  };
+
+  // Try to sync to Supabase first
+  try {
+    const result = await syncHistory(payload, completed);
+    if (result.success) {
+      lastCurrentTimeRef.current = data.currentTime;
+    } else {
+      console.error("Save history failed:", result.message);
+      // Show toast notification for persistent failures
+      if (result.message?.includes("logged in")) {
+        addToast({
+          title: "Sign in to save progress",
+          description: "Your viewing progress will be saved locally",
+          color: "warning",
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Server sync failed, falling back to localStorage:", error);
+    // Fallback to localStorage if server sync fails
+    // This handles cases where user is not authenticated or server is unavailable
+    const localResult = syncLocalHistory(
+      payload,
+      {
+        adult: options.media.adult,
+        backdrop_path: options.media.backdrop_path,
+        poster_path: options.media.poster_path,
+        release_date: options.media.release_date,
+        title: options.media.title,
+        vote_average: options.media.vote_average,
+      },
+      completed,
+    );
+    if (localResult.success) lastCurrentTimeRef.current = data.currentTime;
+  }
+}
+
+// ==================== Main Hook ====================
+
 export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
   const documentState = useDocumentVisibility();
-  // Destructured values are accessed via optionsRef.current to avoid stale closures
 
+  // State for player status
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [lastEvent, setLastEvent] = useState<PlayerEventType | null>(null);
+
+  // Refs to avoid stale closures
   const lastCurrentTimeRef = useRef(0);
-
   const eventDataRef = useRef<UnifiedPlayerEventData | null>(null);
-
-  // Use refs to avoid stale closures in the message handler
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const syncToStorage = (data: UnifiedPlayerEventData, completed?: boolean) => {
-    const opts = optionsRef.current;
-    if (!opts.saveHistory || !opts.media) return;
-    if (diff(data.currentTime, lastCurrentTimeRef.current) <= 5) return;
-
-    const payload: UnifiedPlayerEventData = {
-      ...data,
-      season: data.season ?? opts.metadata?.season ?? 0,
-      episode: data.episode ?? opts.metadata?.episode ?? 0,
-    };
-
-    const result = syncLocalHistory(
-      payload,
-      {
-        adult: opts.media.adult,
-        backdrop_path: opts.media.backdrop_path,
-        poster_path: opts.media.poster_path,
-        release_date: opts.media.release_date,
-        title: opts.media.title,
-        vote_average: opts.media.vote_average,
-      },
-      completed,
-    );
-    if (result.success) lastCurrentTimeRef.current = data.currentTime;
-    else console.error("Save history failed:", result.message);
-  };
-
+  // Sync history when document becomes hidden (user leaves tab)
   useEffect(() => {
     if (!optionsRef.current.saveHistory || !optionsRef.current.media) return;
     if (documentState === "visible") return;
     if (!eventDataRef.current) return;
-    syncToStorage(eventDataRef.current);
+    syncToStorage(eventDataRef.current, optionsRef.current, lastCurrentTimeRef);
   }, [documentState]);
 
+  // Handle player events from iframe messages
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      const opts = optionsRef.current;
-      if (!opts.saveHistory || !opts.media || !eventDataRef.current) return;
-      syncLocalHistory(
-        eventDataRef.current,
-        {
-          adult: opts.media.adult,
-          backdrop_path: opts.media.backdrop_path,
-          poster_path: opts.media.poster_path,
-          release_date: opts.media.release_date,
-          title: opts.media.title,
-          vote_average: opts.media.vote_average,
-        },
-        eventDataRef.current.event === "ended",
-      );
-    };
-
     const handleMessage = (event: MessageEvent) => {
-      const adapter = Object.values(playerAdapters).find((a) => a.origin === event.origin);
-      if (!adapter) return;
-
-      let rawData: unknown;
-      try {
-        rawData = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      } catch (err) {
-        console.warn("Invalid JSON from player:", err);
-        return;
-      }
-
-      const parsed = adapter.parse(rawData);
+      const parsed = parsePlayerMessage(event);
       if (!parsed) return;
 
       eventDataRef.current = parsed;
@@ -219,7 +251,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
           break;
         case "ended":
           setIsPlaying(false);
-          syncToStorage(parsed, true);
+          syncToStorage(parsed, opts, lastCurrentTimeRef, true).catch(console.error);
           opts.onEnded?.(parsed);
           break;
         case "seeked":
@@ -235,11 +267,31 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
       }
     };
 
+    // Sync history before page unload
+    const handleBeforeUnload = () => {
+      if (eventDataRef.current) {
+        syncToStorage(
+          eventDataRef.current,
+          optionsRef.current,
+          lastCurrentTimeRef,
+          eventDataRef.current.event === "ended",
+        ).catch(console.error);
+      }
+    };
+
     window.addEventListener("message", handleMessage);
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      if (eventDataRef.current) handleBeforeUnload();
+      // Cleanup: sync history on unmount
+      if (eventDataRef.current) {
+        syncToStorage(
+          eventDataRef.current,
+          optionsRef.current,
+          lastCurrentTimeRef,
+          eventDataRef.current.event === "ended",
+        ).catch(console.error);
+      }
       window.removeEventListener("message", handleMessage);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };

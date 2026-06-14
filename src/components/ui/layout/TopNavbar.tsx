@@ -13,11 +13,14 @@ import FullscreenToggleButton from "../button/FullscreenToggleButton";
 import UserProfileButton from "../button/UserProfileButton";
 import ThemeSwitchDropdown from "../input/ThemeSwitchDropdown";
 import BrandLogo from "../other/BrandLogo";
+import useSupabaseUser from "@/hooks/useSupabaseUser";
+import { Button } from "@heroui/react";
 
 const TopNavbar = () => {
   const pathName = usePathname();
   const [kbdLabel, setKbdLabel] = useState("CTRL+K");
   const [{ y }] = useWindowScroll();
+  const { data: user } = useSupabaseUser();
 
   useEffect(() => {
     setKbdLabel(/macintosh|mac os x/i.test(navigator.userAgent) ? "CMD+K" : "CTRL+K");
@@ -72,7 +75,22 @@ const TopNavbar = () => {
         <NavbarItem className="flex gap-1">
           <ThemeSwitchDropdown />
           <FullscreenToggleButton />
-          <UserProfileButton />
+          {user ? (
+            <>
+              <UserProfileButton />
+            </>
+          ) : (
+            <Button
+              as={Link}
+              href="/auth"
+              color="primary"
+              variant="flat"
+              size="sm"
+              className="hidden md:flex"
+            >
+              Sign In
+            </Button>
+          )}
         </NavbarItem>
       </NavbarContent>
     </Navbar>
