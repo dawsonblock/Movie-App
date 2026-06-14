@@ -16,22 +16,22 @@ export type PlayerEventType = z.infer<typeof PlayerEventTypeSchema>;
 
 const VidlinkEventSchema = z.object({
   event: PlayerEventTypeSchema,
-  currentTime: z.number(),
-  duration: z.number(),
+  currentTime: z.number().min(0).max(86400),
+  duration: z.number().min(0).max(86400),
   mtmdbId: z.number(),
   mediaType: z.enum(["movie", "tv"]),
-  season: z.number().optional(),
-  episode: z.number().optional(),
+  season: z.number().int().min(0).max(999).optional(),
+  episode: z.number().int().min(0).max(999).optional(),
 });
 
 const VidkingEventSchema = z.object({
   event: PlayerEventTypeSchema,
-  currentTime: z.number(),
-  duration: z.number(),
+  currentTime: z.number().min(0).max(86400),
+  duration: z.number().min(0).max(86400),
   id: z.union([z.string(), z.number()]),
   mediaType: z.enum(["movie", "tv"]),
-  season: z.number().optional(),
-  episode: z.number().optional(),
+  season: z.number().int().min(0).max(999).optional(),
+  episode: z.number().int().min(0).max(999).optional(),
   progress: z.number().optional(),
 });
 

@@ -28,8 +28,14 @@ const SaveHistoryBodySchema = z.object({
     adult: z.boolean(),
     backdrop_path: z.string().nullable().optional(),
     poster_path: z.string().nullable().optional(),
-    release_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
-    title: z.string(),
+    release_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)").refine(
+      (date) => {
+        const parsed = new Date(date);
+        return !isNaN(parsed.getTime()) && parsed.getFullYear() >= 1900 && parsed.getFullYear() <= 2100;
+      },
+      "Invalid date (must be between 1900-2100)"
+    ),
+    title: z.string().min(1).max(300),
     vote_average: z.number().min(0).max(10),
   }),
 });
