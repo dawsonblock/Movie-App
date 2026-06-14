@@ -9,10 +9,6 @@ test.describe('Electron Security Tests', () => {
   let page: Page;
 
   test.beforeAll(async () => {
-    // Temporarily skip Electron tests due to launcher configuration issues
-    // The framework is ready but needs Electron launcher refinement
-    test.skip(true, 'Electron tests temporarily disabled - launcher needs configuration');
-    
     launcher = getElectronLauncher();
     const { cdpUrl } = await launcher.launch();
     

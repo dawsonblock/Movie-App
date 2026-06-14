@@ -115,13 +115,13 @@ for (const filePath of walk(root)) {
 }
 
 // 3. Check Electron setWindowOpenHandler unconditionally denies all popups
-const electronMainPath = path.join(root, "electron", "main.mjs");
+const electronMainPath = path.join(root, "electron", "main.cjs");
 if (fs.existsSync(electronMainPath)) {
   const content = fs.readFileSync(electronMainPath, "utf8");
   const handlerMatch = content.match(/setWindowOpenHandler\s*\(/);
   if (!handlerMatch) {
     console.error(
-      `\x1b[31mFAIL\x1b[0m electron/main.mjs: setWindowOpenHandler must be defined`,
+      `\x1b[31mFAIL\x1b[0m electron/main.cjs: setWindowOpenHandler must be defined`,
     );
     errors++;
   } else {
@@ -153,7 +153,7 @@ if (fs.existsSync(electronMainPath)) {
     const hasAllow = /action\s*:\s*["']allow["']/.test(block);
     if (!hasDeny || hasAllow) {
       console.error(
-        `\x1b[31mFAIL\x1b[0m electron/main.mjs: setWindowOpenHandler must unconditionally return { action: 'deny' }`,
+        `\x1b[31mFAIL\x1b[0m electron/main.cjs: setWindowOpenHandler must unconditionally return { action: 'deny' }`,
       );
       errors++;
     }

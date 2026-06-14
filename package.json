@@ -23,7 +23,6 @@
     "test:electron": "npm run electron:build && playwright test --config=playwright.electron.config.ts",
     "test:electron:debug": "npm run electron:build && playwright test --config=playwright.electron.config.ts --debug",
     "test:electron:headed": "npm run electron:build && playwright test --config=playwright.electron.config.ts --headed",
-    "electron:test": "cross-env ELECTRON_TEST_MODE=true electron .",
     "test:web-security": "playwright test --config=playwright.web-security.config.ts",
     "test:performance": "node scripts/performance-baseline.mjs",
     "test:performance:report": "node scripts/generate-performance-report.mjs",

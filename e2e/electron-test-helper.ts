@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.join(__dirname, '..');
@@ -29,6 +30,26 @@ class ElectronTestLauncher {
       }
     }
     throw new Error('No available CDP port found in range 9200-9300');
+  }
+
+  /**
+   * Get the Electron executable path for the current platform
+   */
+  private getElectronPath(): string {
+    const electronPath = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist');
+    
+    if (process.platform === 'darwin') {
+      const macPath = path.join(electronPath, 'Electron.app', 'Contents', 'MacOS', 'Electron');
+      if (existsSync(macPath)) return macPath;
+    } else if (process.platform === 'win32') {
+      const winPath = path.join(electronPath, 'electron.exe');
+      if (existsSync(winPath)) return winPath;
+    } else {
+      const linuxPath = path.join(electronPath, 'electron');
+      if (existsSync(linuxPath)) return linuxPath;
+    }
+    
+    throw new Error(`Electron binary not found for platform ${process.platform}`);
   }
 
   /**
@@ -99,8 +120,8 @@ class ElectronTestLauncher {
 
     console.log(`[Electron Test Helper] Launching Electron app with CDP port ${this.cdpPort}`);
 
-    // Use the electron binary from the Electron.app bundle on macOS
-    const electronPath = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+    // Use the electron CLI wrapper which handles module loading correctly
+    const electronCli = path.join(PROJECT_ROOT, 'node_modules', '.bin', 'electron');
     
     // Launch Electron with remote debugging enabled
     const electronArgs = [
@@ -112,7 +133,10 @@ class ElectronTestLauncher {
       '--disable-software-rasterizer',
     ];
 
-    this.electronProcess = spawn(electronPath, electronArgs, {
+    console.log(`[Electron Test Helper] Launching with electron CLI: ${electronCli}`);
+    console.log(`[Electron Test Helper] Args: ${electronArgs.join(' ')}`);
+
+    this.electronProcess = spawn(electronCli, electronArgs, {
       cwd: PROJECT_ROOT,
       env: {
         ...process.env,
@@ -120,6 +144,7 @@ class ElectronTestLauncher {
         NODE_ENV: 'test',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true, // Use shell to ensure the electron CLI works cross-platform
     });
 
     // Log Electron output for debugging

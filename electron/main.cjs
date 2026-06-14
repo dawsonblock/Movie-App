@@ -5,7 +5,6 @@ const { createConnection } = require("node:net");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const __dirname = path.dirname(__filename);
 const isTestMode = process.env.ELECTRON_TEST_MODE === 'true';
 const PORT = 45876;
 
@@ -18,14 +17,14 @@ let serverProcess = null;
 function getStandaloneDir() {
   // In test mode, always use dev location
   if (isTestMode) {
-    return path.join(__dirname, "..", ".next", "standalone");
+    return path.join(path.dirname(__filename), "..", ".next", "standalone");
   }
   
   // Check if app is packaged
   isDev = !app.isPackaged;
   
   if (isDev) {
-    return path.join(__dirname, "..", ".next", "standalone");
+    return path.join(path.dirname(__filename), "..", ".next", "standalone");
   }
 
   return path.join(process.resourcesPath, "standalone");
@@ -124,7 +123,7 @@ function startNextServer() {
   const { standaloneDir, serverEntry } = getServerEntry();
 
   if (isDev || isTestMode) {
-    loadEnvFile(path.join(__dirname, "..", ".env.local"));
+    loadEnvFile(path.join(path.dirname(__filename), "..", ".env.local"));
   }
 
   serverProcess = spawn(process.execPath, [serverEntry], {
