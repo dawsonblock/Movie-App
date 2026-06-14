@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export function useKeyboardShortcuts({
   onTogglePalette,
 }: {
   onTogglePalette?: () => void;
 }) {
+  const isMacRef = useRef(/macintosh|mac os x/i.test(navigator.userAgent));
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const isMac = /macintosh|mac os x/i.test(navigator.userAgent);
-      const meta = isMac ? e.metaKey : e.ctrlKey;
+      const meta = isMacRef.current ? e.metaKey : e.ctrlKey;
 
       // CMD/CTRL + K: Toggle command palette
       if (meta && e.key.toLowerCase() === "k") {

@@ -64,7 +64,7 @@ const AuthForms: React.FC = () => {
       });
       setError(false);
     }
-  }, [error]);
+  }, [error, setError]);
 
   if (isPendingMovies || isPendingTv) {
     return <Spinner size="lg" className="absolute-center" variant="simple" />;

@@ -2,6 +2,7 @@
 
 import { tmdb } from "@/api/tmdb";
 import { Params } from "@/types";
+import { isEmpty } from "@/utils/helpers";
 import { Spinner } from "@heroui/react";
 import { useScrollIntoView } from "@mantine/hooks";
 import { useQuery } from "@tanstack/react-query";
@@ -49,7 +50,7 @@ const TVShowDetailPage: NextPage<Params<{ id: number }>> = ({ params }) => {
     );
   }
 
-  if (error) notFound();
+  if (error || isEmpty(tv)) return notFound();
 
   return (
     <div className="mx-auto max-w-6xl">

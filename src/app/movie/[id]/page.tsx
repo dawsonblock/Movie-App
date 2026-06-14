@@ -7,6 +7,7 @@ import { tmdb } from "@/api/tmdb";
 import { Cast } from "tmdb-ts/dist/types/credits";
 import { notFound } from "next/navigation";
 import { Image } from "tmdb-ts";
+import { isEmpty } from "@/utils/helpers";
 import dynamic from "next/dynamic";
 import { Params } from "@/types";
 import { NextPage } from "next";
@@ -42,7 +43,7 @@ const MovieDetailPage: NextPage<Params<{ id: number }>> = ({ params }) => {
     return <Spinner size="lg" className="absolute-center" variant="simple" />;
   }
 
-  if (error) notFound();
+  if (error || isEmpty(movie)) return notFound();
 
   return (
     <div className="mx-auto max-w-6xl">

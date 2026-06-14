@@ -55,7 +55,7 @@ const SearchList = () => {
 
   useEffect(() => {
     queryClient.removeQueries({ queryKey: ["search-list"] });
-  }, [content]);
+  }, [content, queryClient]);
 
   const renderSearchResults = useMemo(() => {
     return () => {

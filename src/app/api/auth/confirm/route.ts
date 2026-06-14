@@ -9,7 +9,12 @@ export const GET = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/";
+  let next = searchParams.get("next") ?? "/";
+
+  // Prevent open redirects
+  if (!next.startsWith("/") || next.startsWith("//")) {
+    next = "/";
+  }
 
   if (token_hash && type) {
     const supabase = await createClient();
@@ -19,9 +24,9 @@ export const GET = async (request: NextRequest) => {
       token_hash,
     });
 
-    console.error({ error });
-
-    if (!error) {
+    if (error) {
+      console.error("OTP verification error:", error);
+    } else {
       return redirect(next);
     }
   }

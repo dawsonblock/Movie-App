@@ -13,7 +13,7 @@ const TvShowBackdropSection: React.FC<{
   const opacity = Math.min((y / 1000) * 2, 1);
   const backdropImage = getImageUrl(tv.backdrop_path, "backdrop", true);
   const titleImage = getImageUrl(
-    tv.images.logos.find((logo) => logo.iso_639_1 === "en")?.file_path,
+    tv.images?.logos?.find((logo) => logo.iso_639_1 === "en")?.file_path,
     "title",
   );
 

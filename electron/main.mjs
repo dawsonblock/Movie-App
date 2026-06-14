@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell } from "electron";
+import { app, BrowserWindow, Menu } from "electron";
 import { spawn } from "node:child_process";
 import { createConnection } from "node:net";
 import fs from "node:fs";
@@ -222,10 +222,7 @@ async function createWindow() {
     mainWindow?.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("http:") || url.startsWith("https:")) {
-      shell.openExternal(url);
-    }
+  mainWindow.webContents.setWindowOpenHandler(() => {
     return { action: "deny" };
   });
 
