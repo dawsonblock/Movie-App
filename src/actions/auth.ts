@@ -2,6 +2,7 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
+import { Database } from "@/utils/supabase/types";
 import {
   ForgotPasswordFormInput,
   ForgotPasswordFormSchema,
@@ -23,7 +24,7 @@ import { performMigration } from "@/utils/migration";
  * @param supabase The Supabase client instance.
  * @returns An ActionResponse.
  */
-type AuthAction<T> = (data: T, supabase: SupabaseClient) => ActionResponse;
+type AuthAction<T> = (data: T, supabase: SupabaseClient<Database>) => ActionResponse;
 
 /**
  * A higher-order function to create a server action that handles
@@ -36,7 +37,6 @@ type AuthAction<T> = (data: T, supabase: SupabaseClient) => ActionResponse;
 const createAuthAction = <T extends { captchaToken?: string }>(
   schema: z.ZodSchema<T>,
   action: AuthAction<T>,
-  admin?: boolean,
 ) => {
   return async (formData: T): ActionResponse => {
     const result = schema.safeParse(formData);
@@ -50,7 +50,7 @@ const createAuthAction = <T extends { captchaToken?: string }>(
     }
 
     try {
-      const supabase = await createClient(admin);
+      const supabase = await createClient();
       return await action(result.data, supabase);
     } catch (error) {
       // Catch potential unhandled errors in actions

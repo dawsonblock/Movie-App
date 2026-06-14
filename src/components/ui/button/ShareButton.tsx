@@ -95,7 +95,6 @@ const ShareButton: React.FC<ShareButtonProps> = ({ title, id, type = "movie" }) 
                 title={description}
                 hashtags={HASTAGS}
                 url={url}
-                subject={description}
                 onClick={close}
                 className="flex flex-col items-center justify-center gap-2"
               >

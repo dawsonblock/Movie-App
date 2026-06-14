@@ -32,25 +32,7 @@ class ElectronTestLauncher {
     throw new Error('No available CDP port found in range 9200-9300');
   }
 
-  /**
-   * Get the Electron executable path for the current platform
-   */
-  private getElectronPath(): string {
-    const electronPath = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist');
-    
-    if (process.platform === 'darwin') {
-      const macPath = path.join(electronPath, 'Electron.app', 'Contents', 'MacOS', 'Electron');
-      if (existsSync(macPath)) return macPath;
-    } else if (process.platform === 'win32') {
-      const winPath = path.join(electronPath, 'electron.exe');
-      if (existsSync(winPath)) return winPath;
-    } else {
-      const linuxPath = path.join(electronPath, 'electron');
-      if (existsSync(linuxPath)) return linuxPath;
-    }
-    
-    throw new Error(`Electron binary not found for platform ${process.platform}`);
-  }
+  
 
   /**
    * Check if a port is available
@@ -127,7 +109,6 @@ class ElectronTestLauncher {
     const electronArgs = [
       path.join(PROJECT_ROOT, 'electron', 'main.cjs'),
       `--remote-debugging-port=${this.cdpPort}`,
-      '--no-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
       '--disable-software-rasterizer',
