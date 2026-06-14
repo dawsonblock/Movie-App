@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostile Iframe Container Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hostile Iframe Container Test</h1>
+        <p>This page loads a hostile iframe that attempts popup and navigation attacks.</p>
+        
+        <div class="status">
+            <strong>Parent Page Status:</strong> <span id="parent-status">Loading...</span>
+        </div>
+        
+        <div class="status">
+            <strong>Security Events:</strong>
+            <ul id="security-events"></ul>
+        </div>
+        
+        <h2>Hostile Iframe:</h2>
+        <iframe 
+            id="hostile-iframe"
+            src="/test-hostile-iframe.html" 
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+            title="Hostile Test Iframe">
+        </iframe>
+    </div>
+
+    <script>
+        const parentStatus = document.getElementById('parent-status');
+        const securityEvents = document.getElementById('security-events');
+        
+        // Track if parent page is navigated away
+        let parentNavigated = false;
+        let popupOpened = false;
+        let downloadTriggered = false;
+        
+        // Monitor for popup attempts
+        const originalWindowOpen = window.open;
+        window.open = function(url, target, features) {
+            popupOpened = true;
+            addSecurityEvent('Popup blocked: ' + url);
+            return null;
+        };
+        
+        // Monitor for navigation attempts
+        window.addEventListener('beforeunload', (e) => {
+            parentNavigated = true;
+            addSecurityEvent('Navigation attempted: ' + window.location.href);
+        });
+        
+        // Monitor for download attempts
+        let originalCreateElement = document.createElement;
+        document.createElement = function(tagName) {
+            const element = originalCreateElement.call(document, tagName);
+            if (tagName.toLowerCase() === 'a') {
+                const originalClick = element.click;
+                element.click = function() {
+                    if (element.download) {
+                        downloadTriggered = true;
+                        addSecurityEvent('Download blocked: ' + element.href);
+                    }
+                    return originalClick.call(element);
+                };
+            }
+            return element;
+        };
+        
+        function addSecurityEvent(message) {
+            const li = document.createElement('li');
+            li.textContent = message;
+            li.style.color = 'orange';
+            securityEvents.appendChild(li);
+        }
+        
+        function addBlockedEvent(message) {
+            const li = document.createElement('li');
+            li.textContent = message;
+            li.style.color = 'green';
+            li.style.fontWeight = 'bold';
+            securityEvents.appendChild(li);
+        }
+        
+        // Update parent status
+        setTimeout(() => {
+            parentStatus.textContent = 'Parent page stable - monitoring for hostile attempts';
+            parentStatus.style.color = 'green';
+        }, 1000);
+        
+        // Check security status after hostile attempts should have occurred
+        setTimeout(() => {
+            if (!parentNavigated) {
+                addBlockedEvent('✓ Parent navigation blocked');
+            } else {
+                addSecurityEvent('✗ Parent navigation NOT blocked');
+            }
+            
+            if (!popupOpened) {
+                addBlockedEvent('✓ Popup opening blocked');
+            } else {
+                addSecurityEvent('✗ Popup opening NOT blocked');
+            }
+            
+            if (!downloadTriggered) {
+                addBlockedEvent('✓ Download blocked');
+            } else {
+                addSecurityEvent('✗ Download NOT blocked');
+            }
+            
+            parentStatus.textContent = 'Security check complete';
+        }, 8000);
+        
+        // Listen for messages from the hostile iframe
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'hostile-iframe-test') {
+                addSecurityEvent('Message received from hostile iframe: ' + event.data.message);
+            }
+        });
+    </script>
+</body>
+</html>

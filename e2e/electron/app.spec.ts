@@ -181,6 +181,41 @@ test.describe('Electron Application Tests', () => {
     expect(popup).toBeNull();
   });
 
+  test('should block hostile iframe popup and navigation attempts', async () => {
+    const window = await electronApp.firstWindow();
+    
+    // Track popup events
+    const popupPromise = window.context().waitForEvent('page', { timeout: 10000 }).catch(() => null);
+    
+    // Track download events
+    const downloadPromise = window.waitForEvent('download', { timeout: 10000 }).catch(() => null);
+    
+    // Navigate to hostile iframe container
+    await window.goto('/test-hostile-iframe-container.html');
+    
+    // Wait for the page to load and execute hostile attempts
+    await window.waitForTimeout(10000);
+    
+    // Verify no popup was opened
+    const popup = await popupPromise;
+    expect(popup).toBeNull();
+    
+    // Verify no download was triggered
+    const download = await downloadPromise;
+    expect(download).toBeNull();
+    
+    // Verify we're still on the container page (navigation blocked)
+    expect(window.url()).toContain('/test-hostile-iframe-container.html');
+    
+    // Check that security events were logged
+    const securityEventsCount = await window.locator('#security-events li').count();
+    expect(securityEventsCount).toBeGreaterThan(0);
+    
+    // Verify that blocked events are shown
+    const hasBlockedEvents = await window.locator('#security-events li').filter({ hasText: 'blocked' }).count();
+    expect(hasBlockedEvents).toBeGreaterThan(0);
+  });
+
   test('should handle system theme changes', async () => {
     const window = await electronApp.firstWindow();
     

@@ -2,6 +2,39 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Security Tests', () => {
   test.describe('Popup Blocking', () => {
+    test('should block popup attempts from hostile iframe container', async ({ page, context }) => {
+      // Track popup events
+      const popupPromise = context.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
+      
+      // Track download events
+      const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
+      
+      // Navigate to hostile iframe container
+      await page.goto('/test-hostile-iframe-container.html');
+      
+      // Wait for the page to load and execute hostile attempts
+      await page.waitForTimeout(10000);
+      
+      // Verify no popup was opened
+      const popup = await popupPromise;
+      expect(popup).toBeNull();
+      
+      // Verify no download was triggered
+      const download = await downloadPromise;
+      expect(download).toBeNull();
+      
+      // Verify we're still on the container page (navigation blocked)
+      expect(page.url()).toContain('/test-hostile-iframe-container.html');
+      
+      // Check that security events were logged
+      const securityEventsCount = await page.locator('#security-events li').count();
+      expect(securityEventsCount).toBeGreaterThan(0);
+      
+      // Verify that blocked events are shown
+      const hasBlockedEvents = await page.locator('#security-events li').filter({ hasText: 'blocked' }).count();
+      expect(hasBlockedEvents).toBeGreaterThan(0);
+    });
+
     test('should block popup attempts from player iframe', async ({ page, context }) => {
       // Track popup events
       const popupPromise = context.waitForEvent('popup', { timeout: 5000 }).catch(() => null);
