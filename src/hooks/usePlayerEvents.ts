@@ -1,9 +1,8 @@
-import { syncHistory } from "@/actions/histories";
+import { syncLocalHistory } from "@/utils/localStorage/history";
 import { ContentType } from "@/types";
 import { diff } from "@/utils/helpers";
 import { useDocumentVisibility } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
-import useSupabaseUser from "./useSupabaseUser";
 
 export type PlayerEventType = "play" | "pause" | "seeked" | "ended" | "timeupdate";
 
@@ -49,9 +48,7 @@ export interface UnifiedPlayerEventData {
 }
 
 export interface PlayerAdapter<RawMessage extends BasePlayerEventEnvelope<any>> {
-  /** Domain origin for identifying source */
   origin: `https://${string}`;
-  /** Converts raw → unified structure */
   parse: (raw: RawMessage) => UnifiedPlayerEventData | null;
 }
 
@@ -84,6 +81,15 @@ export const playerAdapters = {
 } as const satisfies AdapterMap;
 
 export interface UsePlayerEventsOptions {
+  media?: {
+    id: number;
+    title: string;
+    backdrop_path: string;
+    poster_path?: string | null;
+    release_date: string;
+    vote_average: number;
+    adult: boolean;
+  };
   metadata?: { season?: number; episode?: number };
   saveHistory?: boolean;
   onPlay?: (data: UnifiedPlayerEventData) => void;
@@ -94,10 +100,8 @@ export interface UsePlayerEventsOptions {
 }
 
 export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
-  const { data: user } = useSupabaseUser();
   const documentState = useDocumentVisibility();
-
-  const { metadata, saveHistory, onPlay, onPause, onSeeked, onEnded, onTimeUpdate } = options;
+  const { media, metadata, saveHistory, onPlay, onPause, onSeeked, onEnded, onTimeUpdate } = options;
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -107,9 +111,9 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
 
   const eventDataRef = useRef<UnifiedPlayerEventData | null>(null);
 
-  const syncToServer = async (data: UnifiedPlayerEventData, completed?: boolean) => {
-    if (!saveHistory || !user) return;
-    if (diff(data.currentTime, lastCurrentTime) <= 5) return; // prevent spam
+  const syncToStorage = (data: UnifiedPlayerEventData, completed?: boolean) => {
+    if (!saveHistory || !media) return;
+    if (diff(data.currentTime, lastCurrentTime) <= 5) return;
 
     const payload: UnifiedPlayerEventData = {
       ...data,
@@ -117,28 +121,44 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
       episode: data.episode || metadata?.episode || 0,
     };
 
-    const { success, message } = await syncHistory(payload, completed);
-    if (success) setLastCurrentTime(data.currentTime);
-    else console.error("Save history failed:", message);
+    const result = syncLocalHistory(
+      payload,
+      {
+        adult: media.adult,
+        backdrop_path: media.backdrop_path,
+        poster_path: media.poster_path,
+        release_date: media.release_date,
+        title: media.title,
+        vote_average: media.vote_average,
+      },
+      completed,
+    );
+    if (result.success) setLastCurrentTime(data.currentTime);
+    else console.error("Save history failed:", result.message);
   };
 
   useEffect(() => {
-    if (!saveHistory || !user) return;
+    if (!saveHistory || !media) return;
     if (documentState === "visible") return;
     if (!eventDataRef.current) return;
-    syncToServer(eventDataRef.current);
+    syncToStorage(eventDataRef.current);
   }, [documentState, lastCurrentTime]);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (!saveHistory || !user) return;
-      if (!eventDataRef.current) return;
-
-      const payload = {
-        ...eventDataRef.current,
-        completed: eventDataRef.current.event === "ended",
-      };
-      navigator.sendBeacon("/api/player/save-history", JSON.stringify(payload));
+      if (!saveHistory || !media || !eventDataRef.current) return;
+      syncLocalHistory(
+        eventDataRef.current,
+        {
+          adult: media.adult,
+          backdrop_path: media.backdrop_path,
+          poster_path: media.poster_path,
+          release_date: media.release_date,
+          title: media.title,
+          vote_average: media.vote_average,
+        },
+        eventDataRef.current.event === "ended",
+      );
     };
 
     const handleMessage = (event: MessageEvent) => {
@@ -170,7 +190,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
           break;
         case "ended":
           setIsPlaying(false);
-          syncToServer(parsed, true);
+          syncToStorage(parsed, true);
           onEnded?.(parsed);
           break;
         case "seeked":

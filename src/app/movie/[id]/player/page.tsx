@@ -1,7 +1,7 @@
 "use client";
 
 import { tmdb } from "@/api/tmdb";
-import { getMovieLastPosition } from "@/actions/histories";
+import { getMovieLastPosition } from "@/utils/localStorage/history";
 import MoviePlayer from "@/components/sections/Movie/Player/Player";
 import { Params } from "@/types";
 import { isEmpty } from "@/utils/helpers";
@@ -23,18 +23,20 @@ const MoviePlayerPage: NextPage<Params<{ id: number }>> = ({ params }) => {
     queryKey: ["movie-player-detail", id],
   });
 
-  const { data: startAt, isPending: isPendingStartAt } = useQuery({
-    queryFn: () => getMovieLastPosition(id),
-    queryKey: ["movie-player-start-at", id],
-  });
+  const startAt = getMovieLastPosition(id);
 
-  if (isPending || isPendingStartAt) {
+  if (isPending) {
     return <Spinner size="lg" className="absolute-center" variant="simple" />;
   }
 
   if (error || isEmpty(movie)) return notFound();
 
-  return <MoviePlayer movie={movie} startAt={startAt} />;
+  return (
+    <MoviePlayer
+      movie={movie}
+      startAt={startAt}
+    />
+  );
 };
 
 export default MoviePlayerPage;

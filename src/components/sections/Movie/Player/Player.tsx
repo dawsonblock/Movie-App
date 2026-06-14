@@ -37,7 +37,18 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, startAt }) => {
     parseAsInteger.withDefault(0),
   );
 
-  usePlayerEvents({ saveHistory: true });
+  usePlayerEvents({
+    saveHistory: true,
+    media: {
+      id: movie.id,
+      title: title,
+      backdrop_path: movie.backdrop_path,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date,
+      vote_average: movie.vote_average,
+      adult: movie.adult,
+    },
+  });
   useDocumentTitle(`Play ${title} | ${siteConfig.name}`);
 
   const PLAYER = useMemo(() => players[selectedSource] || players[0], [players, selectedSource]);

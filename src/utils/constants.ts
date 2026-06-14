@@ -10,6 +10,7 @@ const DISCLAIMER_STORAGE_KEY = "disclaimer-agreed";
 const ADS_WARNING_STORAGE_KEY = "ads-warning-seen";
 const LIBRARY_STORAGE_KEY = "bookmarks";
 const SEARCH_HISTORY_STORAGE_KEY = "search-histories";
+const HISTORY_STORAGE_KEY = "cinextma-history";
 
 // Others
 const ITEMS_PER_PAGE = 20;
@@ -29,6 +30,7 @@ export {
   ADS_WARNING_STORAGE_KEY,
   LIBRARY_STORAGE_KEY,
   SEARCH_HISTORY_STORAGE_KEY,
+  HISTORY_STORAGE_KEY,
   ITEMS_PER_PAGE,
   SpacingClasses,
 };

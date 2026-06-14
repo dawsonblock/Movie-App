@@ -5,7 +5,7 @@ import Carousel from "@/components/ui/wrapper/Carousel";
 import useDiscoverFilters from "@/hooks/useDiscoverFilters";
 import ResumeCard from "./Cards/Resume";
 import { useQuery } from "@tanstack/react-query";
-import { getUserHistories } from "@/actions/histories";
+import { getUserHistories } from "@/utils/localStorage/history";
 
 const ContinueWatching: React.FC = () => {
   const { content } = useDiscoverFilters();
@@ -14,7 +14,7 @@ const ContinueWatching: React.FC = () => {
     queryKey: ["continue-watching"],
   });
 
-  if (!data?.data) return null;
+  if (!data?.data || data.data.length === 0) return null;
 
   return (
     <section id="continue-watching" className="min-h-[250px] md:min-h-[300px]">
@@ -26,7 +26,7 @@ const ContinueWatching: React.FC = () => {
           {data.data.map((media) => {
             return (
               <div
-                key={media.id}
+                key={`${media.media_id}-${media.type}-${media.season}-${media.episode}`}
                 className="embla__slide flex min-h-fit max-w-fit items-center px-1 py-2"
               >
                 <ResumeCard media={media} />

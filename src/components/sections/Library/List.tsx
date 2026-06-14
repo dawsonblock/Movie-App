@@ -1,11 +1,14 @@
 "use client";
 
-import { getWatchlist, removeAllWatchlist } from "@/actions/library";
+import {
+  getLibraryItems,
+  removeAllLibrary,
+  WatchlistEntry,
+} from "@/utils/localStorage/library";
 import { queryClient } from "@/app/providers";
 import BackToTopButton from "@/components/ui/button/BackToTopButton";
 import ContentTypeSelection from "@/components/ui/other/ContentTypeSelection";
 import useDiscoverFilters from "@/hooks/useDiscoverFilters";
-import useSupabaseUser from "@/hooks/useSupabaseUser";
 import { isEmpty } from "@/utils/helpers";
 import { Trash } from "@/utils/icons";
 import { addToast, Button, Select, SelectItem, Spinner } from "@heroui/react";
@@ -31,17 +34,15 @@ const SORT_OPTIONS: { key: SortOption; label: string }[] = [
 const LibraryList = () => {
   const { ref, inViewport } = useInViewport();
   const { content } = useDiscoverFilters();
-  const { data: user, isLoading: isUserLoading } = useSupabaseUser();
   const [isPending, startTransition] = useTransition();
   const [sortOption, setSortOption] = useState<SortOption>("created_at");
   const [opened, { open, close }] = useDisclosure(false);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status, refetch } =
     useInfiniteQuery({
-      queryKey: ["watchlist", content, user?.id],
+      queryKey: ["watchlist", content],
       queryFn: async ({ pageParam = 1 }) => {
-        if (!user) return { success: true, data: [], hasNextPage: false };
-        return await getWatchlist(content as FilterType, pageParam, ITEMS_PER_PAGE);
+        return getLibraryItems(content as FilterType, pageParam, ITEMS_PER_PAGE);
       },
       initialPageParam: 1,
       getNextPageParam: (lastPage, pages) => {
@@ -50,7 +51,6 @@ const LibraryList = () => {
         }
         return undefined;
       },
-      enabled: !isUserLoading,
       staleTime: 1000 * 60 * 5,
     });
 
@@ -62,8 +62,7 @@ const LibraryList = () => {
 
   const clearWatchlistMutation = useMutation({
     mutationFn: async (type: "movie" | "tv") => {
-      if (!user) throw new Error("User not authenticated");
-      const result = await removeAllWatchlist(type);
+      const result = removeAllLibrary(type);
       if (!result.success) {
         throw new Error(result.error || "Failed to clear watchlist");
       }
@@ -73,13 +72,11 @@ const LibraryList = () => {
     },
     onSuccess: ({ type, count }) => {
       queryClient.invalidateQueries({ queryKey: ["watchlist"] });
-
       addToast({
         title: `Cleared ${count} ${type === "movie" ? "movies" : "TV shows"} from your watchlist!`,
         color: "success",
         icon: <Trash />,
       });
-
       close();
     },
     onError: (error) => {
@@ -92,12 +89,16 @@ const LibraryList = () => {
     },
   });
 
+  const confirmClearWatchlist = () => {
+    startTransition(() => {
+      clearWatchlistMutation.mutate(content);
+    });
+  };
+
   const sortedWatchlist = useMemo(() => {
     if (!data?.pages) return [];
-
     const allItems = data.pages.flatMap((page) => page.data || []);
-
-    return [...allItems].sort((a, b) => {
+    return [...allItems].sort((a: WatchlistEntry, b: WatchlistEntry) => {
       switch (sortOption) {
         case "vote_average":
         case "release_date":
@@ -110,12 +111,6 @@ const LibraryList = () => {
       }
     });
   }, [data?.pages, sortOption]);
-
-  const confirmClearWatchlist = () => {
-    startTransition(() => {
-      clearWatchlistMutation.mutate(content);
-    });
-  };
 
   if (status === "error") {
     return (
@@ -152,9 +147,7 @@ const LibraryList = () => {
               startContent={<Trash />}
               color="danger"
               variant="shadow"
-              onPress={() => {
-                if (user) open();
-              }}
+              onPress={open}
               isLoading={clearWatchlistMutation.isPending || isPending}
             >
               Clear {content === "movie" ? "Movies" : "TV Shows"} from Watchlist
@@ -171,7 +164,7 @@ const LibraryList = () => {
         ) : hasItems ? (
           <>
             <div className="movie-grid">
-              {sortedWatchlist.map((data) => {
+              {sortedWatchlist.map((data: WatchlistEntry) => {
                 if (data.type === "tv") {
                   return (
                     <Suspense key={`tv-${data.id}`}>
@@ -227,33 +220,25 @@ const LibraryList = () => {
             </div>
           </>
         ) : (
-          <div className="flex h-[30vh] items-center justify-center">
-            <p className="text-default-500">
-              No {content === "movie" ? "movies" : "TV shows"} in your watchlist yet.
+          <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
+            <p className="text-muted-foreground text-center text-lg">
+              Your watchlist is empty.
+            </p>
+            <p className="text-muted-foreground text-center text-sm">
+              Save movies and TV shows to see them here.
             </p>
           </div>
         )}
       </div>
-
-      <BackToTopButton />
-
       <ConfirmationModal
-        title={`Clear ${content === "movie" ? "Movies" : "TV Shows"}?`}
         isOpen={opened}
         onClose={close}
         onConfirm={confirmClearWatchlist}
-        confirmLabel="Clear All"
-        isLoading={clearWatchlistMutation.isPending}
+        title="Clear Watchlist"
       >
-        <p>
-          Are you sure you want to remove all {content === "movie" ? "movies" : "TV shows"} from
-          your watchlist? This action cannot be undone.
-        </p>
-        <p className="text-default-500 text-sm">
-          {sortedWatchlist.length} {sortedWatchlist.length === 1 ? "item" : "items"} will be
-          removed.
-        </p>
+        {`Are you sure you want to clear all ${content === "movie" ? "movies" : "TV shows"} from your watchlist? This action cannot be undone.`}
       </ConfirmationModal>
+      <BackToTopButton />
     </>
   );
 };

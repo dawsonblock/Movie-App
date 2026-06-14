@@ -53,6 +53,15 @@ const TvShowPlayer: React.FC<TvShowPlayerProps> = ({
 
   usePlayerEvents({
     saveHistory: true,
+    media: {
+      id: tv.id,
+      title: tv.name,
+      backdrop_path: tv.backdrop_path,
+      poster_path: tv.poster_path,
+      release_date: tv.first_air_date,
+      vote_average: tv.vote_average,
+      adult: "adult" in tv ? Boolean(tv.adult) : false,
+    },
     metadata: { season: episode.season_number, episode: episode.episode_number },
   });
   useDocumentTitle(

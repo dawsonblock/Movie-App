@@ -1,7 +1,7 @@
 "use client";
 
 import Rating from "@/components/ui/other/Rating";
-import type { HistoryDetail } from "@/types/movie";
+import type { LocalHistoryItem } from "@/utils/localStorage/history";
 import { cn } from "@/utils/helpers";
 import { PlayOutline } from "@/utils/icons";
 import { formatDuration, getImageUrl, timeAgo } from "@/utils/movies";
@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useCallback } from "react";
 
 interface ResumeCardProps {
-  media: HistoryDetail;
+  media: LocalHistoryItem;
 }
 
 const ResumeCard: React.FC<ResumeCardProps> = ({ media }) => {

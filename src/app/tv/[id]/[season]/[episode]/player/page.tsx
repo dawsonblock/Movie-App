@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 import { use } from "react";
 import dynamic from "next/dynamic";
 import { NextPage } from "next";
-import { getTvShowLastPosition } from "@/actions/histories";
+import { getTvShowLastPosition } from "@/utils/localStorage/history";
 const TvShowPlayer = dynamic(() => import("@/components/sections/TV/Player/Player"));
 
 const TvShowPlayerPage: NextPage<Params<{ id: number; season: number; episode: number }>> = ({
@@ -34,12 +34,9 @@ const TvShowPlayerPage: NextPage<Params<{ id: number; season: number; episode: n
     queryKey: ["tv-show-season", id, season],
   });
 
-  const { data: startAt, isPending: isPendingStartAt } = useQuery({
-    queryFn: () => getTvShowLastPosition(id, season, episode),
-    queryKey: ["tv-show-player-start-at", id, season, episode],
-  });
+  const startAt = getTvShowLastPosition(id, season, episode);
 
-  if (isPendingTv || isPendingSeason || isPendingStartAt) {
+  if (isPendingTv || isPendingSeason) {
     return <Spinner size="lg" className="absolute-center" color="warning" variant="simple" />;
   }
 
