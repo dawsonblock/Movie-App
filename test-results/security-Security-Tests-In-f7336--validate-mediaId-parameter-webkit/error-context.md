@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: security.spec.ts >> Security Tests >> Iframe Security >> should prevent iframe from accessing parent window
-- Location: e2e/security.spec.ts:249:5
+- Name: security.spec.ts >> Security Tests >> Input Validation >> should validate mediaId parameter
+- Location: e2e/security.spec.ts:159:5
 
 # Error details
 
@@ -18,21 +18,113 @@ Test timeout of 30000ms exceeded.
 ```
 Error: page.goto: Test timeout of 30000ms exceeded.
 Call log:
-  - navigating to "http://localhost:3000/movie/550/player", waiting until "load"
+  - navigating to "http://localhost:3000/movie/invalid/player", waiting until "load"
 
 ```
 
 # Page snapshot
 
 ```yaml
-- main [ref=e5]:
-  - generic "Loading" [ref=e6]:
-    - img [ref=e7]
+- generic [active] [ref=e1]:
+  - main [ref=e5]:
+    - generic "Loading" [ref=e6]:
+      - img [ref=e7]
+  - button "Open Next.js Dev Tools" [ref=e15] [cursor=pointer]:
+    - img [ref=e16]
 ```
 
 # Test source
 
 ```ts
+  61  |     });
+  62  | 
+  63  |     test('should block top-level navigation away from app', async ({ page }) => {
+  64  |       await page.goto('/movie/550/player');
+  65  |       
+  66  |       // Wait for player to load
+  67  |       await page.waitForSelector('iframe', { timeout: 10000 });
+  68  |       
+  69  |       // Monitor navigation events
+  70  |       let navigationBlocked = false;
+  71  |       page.on('framenavigated', (frame) => {
+  72  |         if (frame.url().startsWith('http')) {
+  73  |           navigationBlocked = true;
+  74  |         }
+  75  |       });
+  76  |       
+  77  |       // Wait to ensure no unexpected navigation
+  78  |       await page.waitForTimeout(3000);
+  79  |       
+  80  |       // Verify we're still on the player page
+  81  |       expect(page.url()).toContain('/player');
+  82  |       expect(navigationBlocked).toBe(false);
+  83  |     });
+  84  | 
+  85  |     test('should block forced downloads', async ({ page, context }) => {
+  86  |       // Track download events
+  87  |       const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+  88  |       
+  89  |       await page.goto('/movie/550/player');
+  90  |       
+  91  |       // Wait for player to load
+  92  |       await page.waitForSelector('iframe', { timeout: 10000 });
+  93  |       
+  94  |       // Verify no download was triggered
+  95  |       const download = await downloadPromise;
+  96  |       expect(download).toBeNull();
+  97  |     });
+  98  |   });
+  99  | 
+  100 |   test.describe('Content Security Policy', () => {
+  101 |     test('should have CSP headers', async ({ page }) => {
+  102 |       const response = await page.goto('/');
+  103 |       const cspHeader = await response.headerValue('Content-Security-Policy');
+  104 |       
+  105 |       expect(cspHeader).toBeDefined();
+  106 |       expect(cspHeader).toContain('default-src');
+  107 |       expect(cspHeader).toContain('script-src');
+  108 |       expect(cspHeader).toContain('style-src');
+  109 |     });
+  110 | 
+  111 |     test('should not allow unsafe-eval in script-src', async ({ page }) => {
+  112 |       const response = await page.goto('/');
+  113 |       const cspHeader = await response.headerValue('Content-Security-Policy');
+  114 |       
+  115 |       expect(cspHeader).toBeDefined();
+  116 |       expect(cspHeader).not.toContain('unsafe-eval');
+  117 |     });
+  118 | 
+  119 |     test('should restrict frame sources to allowed domains', async ({ page }) => {
+  120 |       const response = await page.goto('/movie/550/player');
+  121 |       const cspHeader = await response.headerValue('Content-Security-Policy');
+  122 |       
+  123 |       expect(cspHeader).toBeDefined();
+  124 |       expect(cspHeader).toContain('frame-src');
+  125 |     });
+  126 |   });
+  127 | 
+  128 |   test.describe('Input Validation', () => {
+  129 |     test('should sanitize user input in search', async ({ page }) => {
+  130 |       await page.goto('/');
+  131 |       
+  132 |       // Try to inject script via search
+  133 |       await page.fill('[data-testid="search-input"]', '<script>alert("XSS")</script>');
+  134 |       await page.press('[data-testid="search-input"]', 'Enter');
+  135 |       
+  136 |       // Wait for search results
+  137 |       await page.waitForTimeout(2000);
+  138 |       
+  139 |       // Verify no alert was triggered (XSS prevented)
+  140 |       const alertHandled = await page.evaluate(() => {
+  141 |         return window.alertTriggered === true;
+  142 |       });
+  143 |       
+  144 |       expect(alertHandled).toBe(false);
+  145 |     });
+  146 | 
+  147 |     test('should handle special characters in URLs', async ({ page }) => {
+  148 |       // Try to access a URL with special characters
+  149 |       await page.goto('/movie/550?param=<script>alert(1)</script>');
   150 |       
   151 |       // Should not execute the script
   152 |       const alertHandled = await page.evaluate(() => {
@@ -44,7 +136,8 @@ Call log:
   158 | 
   159 |     test('should validate mediaId parameter', async ({ page }) => {
   160 |       // Try to access with invalid mediaId
-  161 |       await page.goto('/movie/invalid/player');
+> 161 |       await page.goto('/movie/invalid/player');
+      |                  ^ Error: page.goto: Test timeout of 30000ms exceeded.
   162 |       
   163 |       // Should show error or redirect
   164 |       await page.waitForTimeout(2000);
@@ -133,8 +226,7 @@ Call log:
   247 |     });
   248 | 
   249 |     test('should prevent iframe from accessing parent window', async ({ page }) => {
-> 250 |       await page.goto('/movie/550/player');
-      |                  ^ Error: page.goto: Test timeout of 30000ms exceeded.
+  250 |       await page.goto('/movie/550/player');
   251 |       
   252 |       await page.waitForSelector('iframe', { timeout: 10000 });
   253 |       
@@ -146,93 +238,4 @@ Call log:
   259 |           
   260 |           // Try to access iframe content (should fail due to cross-origin)
   261 |           const iframeWindow = (iframe as any).contentWindow;
-  262 |           return iframeWindow !== undefined;
-  263 |         } catch (e) {
-  264 |           // Expected to fail due to cross-origin restrictions
-  265 |           return false;
-  266 |         }
-  267 |       });
-  268 |       
-  269 |       // This should be false due to cross-origin restrictions
-  270 |       expect(canAccessParent).toBe(false);
-  271 |     });
-  272 |   });
-  273 | 
-  274 |   test.describe('Open Redirect Prevention', () => {
-  275 |     test('should prevent open redirect via next parameter', async ({ page }) => {
-  276 |       // Try to redirect to external site via next parameter
-  277 |       await page.goto('/auth/callback?next=https://evil.com');
-  278 |       
-  279 |       // Should not redirect to external site
-  280 |       await page.waitForTimeout(2000);
-  281 |       
-  282 |       expect(page.url()).not.toContain('evil.com');
-  283 |     });
-  284 | 
-  285 |     test('should sanitize redirect URLs', async ({ page }) => {
-  286 |       // Try various redirect attempts
-  287 |       const maliciousUrls = [
-  288 |         '//evil.com',
-  289 |         '///evil.com',
-  290 |         'https://evil.com',
-  291 |         'http://evil.com',
-  292 |       ];
-  293 |       
-  294 |       for (const url of maliciousUrls) {
-  295 |         await page.goto(`/auth/callback?next=${encodeURIComponent(url)}`);
-  296 |         await page.waitForTimeout(1000);
-  297 |         
-  298 |         expect(page.url()).not.toContain('evil.com');
-  299 |       }
-  300 |     });
-  301 |   });
-  302 | 
-  303 |   test.describe('HTTP Security Headers', () => {
-  304 |     test('should have X-Frame-Options header', async ({ page }) => {
-  305 |       const response = await page.goto('/');
-  306 |       const frameOptions = await response.headerValue('X-Frame-Options');
-  307 |       
-  308 |       // Should be DENY or SAMEORIGIN
-  309 |       if (frameOptions) {
-  310 |         expect(['DENY', 'SAMEORIGIN']).toContain(frameOptions);
-  311 |       }
-  312 |     });
-  313 | 
-  314 |     test('should have X-Content-Type-Options header', async ({ page }) => {
-  315 |       const response = await page.goto('/');
-  316 |       const contentTypeOptions = await response.headerValue('X-Content-Type-Options');
-  317 |       
-  318 |       expect(contentTypeOptions).toBe('nosniff');
-  319 |     });
-  320 | 
-  321 |     test('should have Referrer-Policy header', async ({ page }) => {
-  322 |       const response = await page.goto('/');
-  323 |       const referrerPolicy = await response.headerValue('Referrer-Policy');
-  324 |       
-  325 |       expect(referrerPolicy).toBeDefined();
-  326 |     });
-  327 |   });
-  328 | 
-  329 |   test.describe('Error Handling Security', () => {
-  330 |     test('should not expose stack traces in error pages', async ({ page }) => {
-  331 |       // Navigate to a page that might error
-  332 |       await page.goto('/movie/999999999');
-  333 |       
-  334 |       await page.waitForTimeout(2000);
-  335 |       
-  336 |       const pageContent = await page.content();
-  337 |       
-  338 |       // Should not contain stack trace information
-  339 |       expect(pageContent).not.toContain('stack trace');
-  340 |       expect(pageContent).not.toContain('internal error');
-  341 |       expect(pageContent).not.toContain('node_modules');
-  342 |     });
-  343 | 
-  344 |     test('should handle 404 errors gracefully', async ({ page }) => {
-  345 |       await page.goto('/non-existent-page');
-  346 |       
-  347 |       // Should show custom 404 page or redirect
-  348 |       await page.waitForTimeout(2000);
-  349 |       
-  350 |       const pageContent = await page.content();
 ```

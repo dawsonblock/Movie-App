@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: security.spec.ts >> Security Tests >> Open Redirect Prevention >> should sanitize redirect URLs
-- Location: e2e/security.spec.ts:285:5
+- Name: security.spec.ts >> Security Tests >> Error Handling Security >> should handle 404 errors gracefully
+- Location: e2e/security.spec.ts:344:5
 
 # Error details
 
@@ -18,74 +18,36 @@ Test timeout of 30000ms exceeded.
 ```
 Error: page.goto: Test timeout of 30000ms exceeded.
 Call log:
-  - navigating to "http://localhost:3000/auth/callback?next=%2F%2Fevil.com", waiting until "load"
+  - navigating to "http://localhost:3000/non-existent-page", waiting until "load"
 
 ```
 
 # Page snapshot
 
 ```yaml
-- main [ref=e5]:
-  - generic [ref=e6]:
-    - heading "404" [level=1] [ref=e7]
-    - heading "Not Found" [level=4] [ref=e8]
-    - paragraph [ref=e9]: The page you are looking for doesn't exist.
-    - button "Home" [ref=e10] [cursor=pointer]
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - button [ref=e7] [cursor=pointer]
+      - list [ref=e8]:
+        - listitem [ref=e9]:
+          - button [ref=e10] [cursor=pointer]:
+            - img [ref=e11]
+          - button "Guest" [ref=e14] [cursor=pointer]:
+            - paragraph [ref=e15]: Guest
+            - img [ref=e17]:
+              - img [ref=e18]
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "404" [level=1] [ref=e24]
+      - heading "Not Found" [level=4] [ref=e25]
+      - paragraph [ref=e26]: The page you are looking for doesn't exist.
+      - button "Home" [ref=e27] [cursor=pointer]
 ```
 
 # Test source
 
 ```ts
-  195 |       // For now, we'll verify the session management structure exists
-  196 |       
-  197 |       await page.goto('/');
-  198 |       
-  199 |       const hasSessionManagement = await page.evaluate(() => {
-  200 |         return typeof localStorage.getItem === 'function';
-  201 |       });
-  202 |       
-  203 |       expect(hasSessionManagement).toBe(true);
-  204 |     });
-  205 |   });
-  206 | 
-  207 |   test.describe('Iframe Security', () => {
-  208 |     test('should have sandbox attribute on player iframe', async ({ page }) => {
-  209 |       await page.goto('/movie/550/player');
-  210 |       
-  211 |       await page.waitForSelector('iframe', { timeout: 10000 });
-  212 |       
-  213 |       const sandbox = await page.locator('iframe').getAttribute('sandbox');
-  214 |       
-  215 |       expect(sandbox).toContain('allow-scripts');
-  216 |       expect(sandbox).toContain('allow-same-origin');
-  217 |       expect(sandbox).toContain('allow-forms');
-  218 |       expect(sandbox).toContain('allow-presentation');
-  219 |       
-  220 |       // Verify dangerous permissions are not present
-  221 |       expect(sandbox).not.toContain('allow-popups');
-  222 |       expect(sandbox).not.toContain('allow-top-navigation');
-  223 |       expect(sandbox).not.toContain('allow-modals');
-  224 |     });
-  225 | 
-  226 |     test('should only allow whitelisted domains in iframe', async ({ page }) => {
-  227 |       await page.goto('/movie/550/player');
-  228 |       
-  229 |       await page.waitForSelector('iframe', { timeout: 10000 });
-  230 |       
-  231 |       const iframeSrc = await page.locator('iframe').getAttribute('src');
-  232 |       
-  233 |       // Should be from allowed domain
-  234 |       const allowedDomains = [
-  235 |         'vidlink.pro',
-  236 |         'vidking.net',
-  237 |         'filmku.stream',
-  238 |         'youtube.com',
-  239 |         'vimeo.com'
-  240 |       ];
-  241 |       
-  242 |       const isAllowed = allowedDomains.some(domain => 
-  243 |         iframeSrc?.includes(domain)
-  244 |       );
   245 |       
   246 |       expect(isAllowed).toBe(true);
   247 |     });
@@ -136,8 +98,7 @@ Call log:
   292 |       ];
   293 |       
   294 |       for (const url of maliciousUrls) {
-> 295 |         await page.goto(`/auth/callback?next=${encodeURIComponent(url)}`);
-      |                    ^ Error: page.goto: Test timeout of 30000ms exceeded.
+  295 |         await page.goto(`/auth/callback?next=${encodeURIComponent(url)}`);
   296 |         await page.waitForTimeout(1000);
   297 |         
   298 |         expect(page.url()).not.toContain('evil.com');
@@ -187,7 +148,8 @@ Call log:
   342 |     });
   343 | 
   344 |     test('should handle 404 errors gracefully', async ({ page }) => {
-  345 |       await page.goto('/non-existent-page');
+> 345 |       await page.goto('/non-existent-page');
+      |                  ^ Error: page.goto: Test timeout of 30000ms exceeded.
   346 |       
   347 |       // Should show custom 404 page or redirect
   348 |       await page.waitForTimeout(2000);
