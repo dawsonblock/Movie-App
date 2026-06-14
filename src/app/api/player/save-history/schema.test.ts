@@ -1,33 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
-
-// Recreate the schema for testing purposes
-const PlayerEventTypeSchema = z.enum([
-  "play",
-  "pause",
-  "seeked",
-  "ended",
-  "timeupdate",
-]);
-
-const SaveHistoryBodySchema = z.object({
-  event: PlayerEventTypeSchema,
-  currentTime: z.number().min(0).max(86400),
-  duration: z.number().min(0).max(86400),
-  mediaId: z.union([z.string().regex(/^\d+$/, "Invalid mediaId format").transform(Number), z.number().int().positive()]),
-  mediaType: z.enum(["movie", "tv"]),
-  season: z.number().int().min(0).max(999).optional(),
-  episode: z.number().int().min(0).max(999).optional(),
-  completed: z.boolean().optional(),
-  mediaDetails: z.object({
-    adult: z.boolean(),
-    backdrop_path: z.string().nullable().optional(),
-    poster_path: z.string().nullable().optional(),
-    release_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
-    title: z.string(),
-    vote_average: z.number().min(0).max(10),
-  }),
-});
+import { SaveHistoryBodySchema } from "./schema";
 
 describe("SaveHistoryBodySchema boundary tests", () => {
   describe("currentTime validation", () => {
@@ -920,6 +892,219 @@ describe("SaveHistoryBodySchema boundary tests", () => {
         },
       });
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("title validation", () => {
+    it("should accept minimum valid title length (1)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2024-01-01",
+          title: "A",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept maximum valid title length (300)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2024-01-01",
+          title: "A".repeat(300),
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject empty title", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2024-01-01",
+          title: "",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject title exceeding maximum length (301)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2024-01-01",
+          title: "A".repeat(301),
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("release_date validation", () => {
+    it("should accept valid date format", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2024-01-01",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept date at minimum year (1900)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "1900-01-01",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept date at maximum year (2100)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2100-12-31",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject invalid date format", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2024/01/01",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject date with invalid year (1899)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "1899-12-31",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject date with invalid year (2101)", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "2101-01-01",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject nonsense date like 9999-99-99", () => {
+      const result = SaveHistoryBodySchema.safeParse({
+        event: "play",
+        currentTime: 30,
+        duration: 120,
+        mediaId: 123,
+        mediaType: "movie",
+        mediaDetails: {
+          adult: false,
+          backdrop_path: "/path.jpg",
+          poster_path: "/poster.jpg",
+          release_date: "9999-99-99",
+          title: "Test Movie",
+          vote_average: 8.5,
+        },
+      });
+      expect(result.success).toBe(false);
     });
   });
 });
