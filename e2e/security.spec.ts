@@ -12,8 +12,25 @@ test.describe('Security Tests', () => {
       // Navigate to hostile iframe container
       await page.goto('/test-hostile-iframe-container.html');
       
-      // Wait for the page to load and execute hostile attempts
-      await page.waitForTimeout(10000);
+      // Wait for iframe to load
+      await page.waitForSelector('iframe', { timeout: 5000 });
+      
+      // Wait for security check to complete (event-driven)
+      await page.evaluate(() => {
+        return new Promise<void>((resolve) => {
+          const checkComplete = () => {
+            window.removeEventListener('security-check-complete', checkComplete);
+            resolve();
+          };
+          window.addEventListener('security-check-complete', checkComplete);
+          
+          // Fallback timeout in case event doesn't fire
+          setTimeout(() => {
+            window.removeEventListener('security-check-complete', checkComplete);
+            resolve();
+          }, 12000);
+        });
+      });
       
       // Verify no popup was opened
       const popup = await popupPromise;

@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { ElectronApplication, _electron as electron } from 'playwright';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 test.describe('Electron Application Tests', () => {
   let electronApp: ElectronApplication;
@@ -8,6 +11,7 @@ test.describe('Electron Application Tests', () => {
     electronApp = await electron.launch({
       args: ['.'],
       executablePath: require('electron'),
+      // Add specific Electron launch options to avoid argument conflicts
     });
   });
 
@@ -193,8 +197,25 @@ test.describe('Electron Application Tests', () => {
     // Navigate to hostile iframe container
     await window.goto('/test-hostile-iframe-container.html');
     
-    // Wait for the page to load and execute hostile attempts
-    await window.waitForTimeout(10000);
+    // Wait for iframe to load
+    await window.waitForSelector('iframe', { timeout: 5000 });
+    
+    // Wait for security check to complete (event-driven)
+    await window.evaluate(() => {
+      return new Promise<void>((resolve) => {
+        const checkComplete = () => {
+          window.removeEventListener('security-check-complete', checkComplete);
+          resolve();
+        };
+        window.addEventListener('security-check-complete', checkComplete);
+        
+        // Fallback timeout in case event doesn't fire
+        setTimeout(() => {
+          window.removeEventListener('security-check-complete', checkComplete);
+          resolve();
+        }, 12000);
+      });
+    });
     
     // Verify no popup was opened
     const popup = await popupPromise;

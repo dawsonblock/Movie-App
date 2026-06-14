@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   testDir: './e2e/electron',
@@ -9,7 +12,7 @@ export default defineConfig({
   reporter: 'html',
   use: {
     launchOptions: {
-      args: ['--disable-gpu', '--disable-dev-shm-usage'],
+      args: ['--disable-gpu', '--disable-dev-shm-usage', '--no-sandbox'],
     },
   },
   projects: [

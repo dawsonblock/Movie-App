@@ -137,8 +137,19 @@
                 addSecurityEvent('✗ Download NOT blocked');
             }
             
+            // Check for clickjacking attempts
+            const clickjackingAttempts = document.querySelectorAll('[title="Hostile overlay"]');
+            if (clickjackingAttempts.length === 0) {
+                addBlockedEvent('✓ Clickjacking attempts blocked');
+            } else {
+                addSecurityEvent('✗ Clickjacking attempts detected');
+            }
+            
             parentStatus.textContent = 'Security check complete';
-        }, 8000);
+            
+            // Set a custom event for test synchronization
+            window.dispatchEvent(new CustomEvent('security-check-complete'));
+        }, 10000);
         
         // Listen for messages from the hostile iframe
         window.addEventListener('message', (event) => {

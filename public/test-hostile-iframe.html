@@ -17,7 +17,7 @@
             border-radius: 4px;
         }
         .attempted {
-            color: #orange;
+            color: orange;
             font-weight: bold;
         }
         .blocked {
@@ -73,20 +73,40 @@
             }
         }, 1000);
 
-        // Attempt 2: top.location.href navigation (attempt but don't actually execute)
+        // Attempt 2: top.location.href navigation (test access only)
         setTimeout(() => {
-            logAttempt('top.location.href', 'Would try to navigate top window to https://example.com');
-            // Don't actually execute to prevent test page from navigating away
-            // In a real scenario, this would be: top.location.href = 'https://example.com';
-            logBlocked('top.location.href (not executed for test stability)');
+            logAttempt('top.location.href', 'Testing top window access');
+            try {
+                // Test if we can access top.location.href (will fail if sandboxed properly)
+                const topUrl = top.location.href;
+                logAttempt('top.location.href', 'Can access top.location.href: ' + topUrl + ' (BLOCKING FAILED!)');
+                statusText.textContent = 'SECURITY FAILURE: Top window accessible';
+                statusText.style.color = 'red';
+            } catch (e) {
+                logBlocked('top.location.href (access blocked: ' + e.message + ')');
+            }
         }, 2000);
 
-        // Attempt 3: location.href self-navigation (attempt but don't actually execute)
+        // Attempt 3: location.href self-navigation (controlled test)
         setTimeout(() => {
-            logAttempt('location.href', 'Would try to navigate self to https://example.com');
-            // Don't actually execute to prevent test page from navigating away
-            // In a real scenario, this would be: location.href = 'https://example.com';
-            logBlocked('location.href (not executed for test stability)');
+            logAttempt('location.href', 'Testing self-navigation capability');
+            try {
+                const originalHref = location.href;
+                // Test with hash-based navigation (safe, same-origin)
+                location.href = originalHref + '#test-nav';
+                
+                setTimeout(() => {
+                    if (location.href.includes('#test-nav')) {
+                        logAttempt('location.href', 'Same-origin navigation succeeded (expected)');
+                        // Clean up
+                        history.replaceState(null, '', originalHref);
+                    } else {
+                        logBlocked('location.href (same-origin navigation blocked)');
+                    }
+                }, 100);
+            } catch (e) {
+                logBlocked('location.href (exception: ' + e.message + ')');
+            }
         }, 3000);
 
         // Attempt 4: Forced download
@@ -117,11 +137,96 @@
             }
         }, 5000);
 
+        // Attempt 6: Clickjacking attempt (transparent overlay)
+        setTimeout(() => {
+            logAttempt('clickjacking', 'Attempting to create transparent overlay');
+            try {
+                const overlay = document.createElement('div');
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.backgroundColor = 'transparent';
+                overlay.style.zIndex = '999999';
+                overlay.style.pointerEvents = 'auto';
+                overlay.title = 'Hostile overlay';
+                document.body.appendChild(overlay);
+                
+                setTimeout(() => {
+                    if (document.body.contains(overlay)) {
+                        logAttempt('clickjacking', 'Overlay created (potential clickjacking vector)');
+                        // Clean up
+                        document.body.removeChild(overlay);
+                    } else {
+                        logBlocked('clickjacking (overlay creation blocked)');
+                    }
+                }, 100);
+            } catch (e) {
+                logBlocked('clickjacking (exception: ' + e.message + ')');
+            }
+        }, 6000);
+
+        // Attempt 7: Timing attack (performance measurement)
+        setTimeout(() => {
+            logAttempt('timing attack', 'Attempting timing attack via performance measurement');
+            try {
+                const start = performance.now();
+                
+                // Try to detect if certain operations are blocked by measuring time
+                for (let i = 0; i < 1000; i++) {
+                    try {
+                        const test = top.location.href;
+                    } catch (e) {
+                        // Access blocked, but we can measure the exception time
+                    }
+                }
+                
+                const end = performance.now();
+                const duration = end - start;
+                
+                if (duration > 100) {
+                    logAttempt('timing attack', 'High latency detected (' + duration.toFixed(2) + 'ms) - possible security checks');
+                } else {
+                    logBlocked('timing attack (low latency - operations likely blocked efficiently)');
+                }
+            } catch (e) {
+                logBlocked('timing attack (exception: ' + e.message + ')');
+            }
+        }, 7000);
+
+        // Attempt 8: Pointer events manipulation
+        setTimeout(() => {
+            logAttempt('pointer events', 'Attempting to manipulate pointer events');
+            try {
+                const testDiv = document.createElement('div');
+                testDiv.style.pointerEvents = 'none';
+                testDiv.style.position = 'fixed';
+                testDiv.style.top = '0';
+                testDiv.style.left = '0';
+                testDiv.style.width = '100%';
+                testDiv.style.height = '100%';
+                testDiv.style.zIndex = '999998';
+                document.body.appendChild(testDiv);
+                
+                setTimeout(() => {
+                    if (document.body.contains(testDiv)) {
+                        logAttempt('pointer events', 'Pointer events manipulation succeeded');
+                        document.body.removeChild(testDiv);
+                    } else {
+                        logBlocked('pointer events (manipulation blocked)');
+                    }
+                }, 100);
+            } catch (e) {
+                logBlocked('pointer events (exception: ' + e.message + ')');
+            }
+        }, 8000);
+
         // Final status
         setTimeout(() => {
             statusText.textContent = 'All hostile attempts completed';
             statusText.style.color = 'blue';
-        }, 6000);
+        }, 9000);
     </script>
 </body>
 </html>
