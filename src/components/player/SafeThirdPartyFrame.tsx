@@ -58,8 +58,8 @@ export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFra
             Click to start watching
           </p>
           <p className="mt-2 max-w-md px-6 text-center text-sm text-gray-300">
-            Beware of fake buttons or ads inside the player. If you see suspicious
-            popups, switch to another source.
+            Popup attempts are blocked. Fake buttons may still appear inside the
+            player.
           </p>
         </div>
       )}

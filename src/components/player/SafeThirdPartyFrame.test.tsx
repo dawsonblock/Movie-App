@@ -32,7 +32,7 @@ describe("SafeThirdPartyFrame", () => {
       />,
     );
     expect(screen.getByText(/click to start watching/i)).toBeInTheDocument();
-    expect(screen.getByText(/beware of fake buttons/i)).toBeInTheDocument();
+    expect(screen.getByText(/popup attempts are blocked/i)).toBeInTheDocument();
   });
 
   it("dismisses the overlay on click", () => {

@@ -1,40 +1,49 @@
+import { z } from "zod";
 import { syncLocalHistory } from "@/utils/localStorage/history";
 import { ContentType } from "@/types";
 import { diff } from "@/utils/helpers";
 import { useDocumentVisibility } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
 
-export type PlayerEventType = "play" | "pause" | "seeked" | "ended" | "timeupdate";
+export const PlayerEventTypeSchema = z.enum([
+  "play",
+  "pause",
+  "seeked",
+  "ended",
+  "timeupdate",
+]);
+export type PlayerEventType = z.infer<typeof PlayerEventTypeSchema>;
 
-export interface BasePlayerEventEnvelope<T> {
-  type: "PLAYER_EVENT" | "MEDIA_DATA";
-  data: T;
-}
+const VidlinkEventSchema = z.object({
+  event: PlayerEventTypeSchema,
+  currentTime: z.number(),
+  duration: z.number(),
+  mtmdbId: z.number(),
+  mediaType: z.enum(["movie", "tv"]),
+  season: z.number().optional(),
+  episode: z.number().optional(),
+});
 
-export interface VidlinkEventData {
-  event: PlayerEventType;
-  currentTime: number;
-  duration: number;
-  mtmdbId: number;
-  mediaType: ContentType;
-  season?: number;
-  episode?: number;
-}
+const VidkingEventSchema = z.object({
+  event: PlayerEventTypeSchema,
+  currentTime: z.number(),
+  duration: z.number(),
+  id: z.union([z.string(), z.number()]),
+  mediaType: z.enum(["movie", "tv"]),
+  season: z.number().optional(),
+  episode: z.number().optional(),
+  progress: z.number().optional(),
+});
 
-export type VidlinkPlayerMessage = BasePlayerEventEnvelope<VidlinkEventData>;
+const VidlinkMessageSchema = z.object({
+  type: z.literal("PLAYER_EVENT"),
+  data: VidlinkEventSchema,
+});
 
-export interface VidkingEventData {
-  event: PlayerEventType;
-  currentTime: number;
-  duration: number;
-  id: string | number;
-  mediaType: ContentType;
-  season?: number;
-  episode?: number;
-  progress?: number;
-}
-
-export type VidkingPlayerMessage = BasePlayerEventEnvelope<VidkingEventData>;
+const VidkingMessageSchema = z.object({
+  type: z.literal("PLAYER_EVENT"),
+  data: VidkingEventSchema,
+});
 
 export interface UnifiedPlayerEventData {
   event: PlayerEventType;
@@ -47,38 +56,50 @@ export interface UnifiedPlayerEventData {
   progress?: number;
 }
 
-export interface PlayerAdapter<RawMessage extends BasePlayerEventEnvelope<any>> { // eslint-disable-line @typescript-eslint/no-explicit-any
+export interface PlayerAdapter {
   origin: `https://${string}`;
-  parse: (raw: RawMessage) => UnifiedPlayerEventData | null;
+  parse: (raw: unknown) => UnifiedPlayerEventData | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AdapterMap = Record<string, PlayerAdapter<any>>;
+export type AdapterMap = Record<string, PlayerAdapter>;
 
 export const playerAdapters = {
   vidlink: {
     origin: "https://vidlink.pro",
-    parse: (raw) => {
-      if (raw.type !== "PLAYER_EVENT") return null;
-      const d = raw.data;
+    parse: (raw: unknown) => {
+      const result = VidlinkMessageSchema.safeParse(raw);
+      if (!result.success) return null;
+      const d = result.data.data;
       return {
-        ...d,
+        event: d.event,
+        currentTime: d.currentTime,
+        duration: d.duration,
         mediaId: d.mtmdbId,
+        mediaType: d.mediaType,
+        season: d.season,
+        episode: d.episode,
       };
     },
-  } satisfies PlayerAdapter<VidlinkPlayerMessage>,
+  } satisfies PlayerAdapter,
 
   vidking: {
     origin: "https://www.vidking.net",
-    parse: (raw) => {
-      if (raw.type !== "PLAYER_EVENT") return null;
-      const d = raw.data;
+    parse: (raw: unknown) => {
+      const result = VidkingMessageSchema.safeParse(raw);
+      if (!result.success) return null;
+      const d = result.data.data;
       return {
-        ...d,
+        event: d.event,
+        currentTime: d.currentTime,
+        duration: d.duration,
         mediaId: d.id,
+        mediaType: d.mediaType,
+        season: d.season,
+        episode: d.episode,
+        progress: d.progress,
       };
     },
-  } satisfies PlayerAdapter<VidkingPlayerMessage>,
+  } satisfies PlayerAdapter,
 } as const satisfies AdapterMap;
 
 export interface UsePlayerEventsOptions {
@@ -123,8 +144,8 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
 
     const payload: UnifiedPlayerEventData = {
       ...data,
-      season: data.season || opts.metadata?.season || 0,
-      episode: data.episode || opts.metadata?.episode || 0,
+      season: data.season ?? opts.metadata?.season ?? 0,
+      episode: data.episode ?? opts.metadata?.episode ?? 0,
     };
 
     const result = syncLocalHistory(
@@ -172,8 +193,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
       const adapter = Object.values(playerAdapters).find((a) => a.origin === event.origin);
       if (!adapter) return;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let rawData: any;
+      let rawData: unknown;
       try {
         rawData = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       } catch (err) {
