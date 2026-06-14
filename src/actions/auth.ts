@@ -44,7 +44,7 @@ const createAuthAction = <T extends { captchaToken?: string }>(
       return { success: false, message };
     }
 
-    if (!result.data.captchaToken) {
+    if (process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY && !result.data.captchaToken) {
       return { success: false, message: "Captcha is required." };
     }
 
@@ -65,9 +65,7 @@ const signInWithEmailAction: AuthAction<LoginFormInput> = async (data, supabase)
   const { data: user, error } = await supabase.auth.signInWithPassword({
     email: data.email,
     password: data.loginPassword,
-    options: {
-      captchaToken: data.captchaToken,
-    },
+    options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
   });
 
   if (error) return { success: false, message: error.message };
@@ -110,9 +108,7 @@ const signUpAction: AuthAction<RegisterFormInput> = async (data, supabase) => {
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
-    options: {
-      captchaToken: data.captchaToken,
-    },
+    options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
   });
 
   if (signUpError) return { success: false, message: signUpError.message };
@@ -142,7 +138,7 @@ const sendResetPasswordEmailAction: AuthAction<ForgotPasswordFormInput> = async 
   supabase,
 ) => {
   const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-    captchaToken: data.captchaToken,
+    ...(data.captchaToken ? { captchaToken: data.captchaToken } : {}),
   });
 
   if (error) return { success: false, message: error.message };

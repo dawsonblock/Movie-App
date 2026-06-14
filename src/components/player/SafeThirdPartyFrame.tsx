@@ -7,7 +7,7 @@
  * Do not add: allow-popups, allow-popups-to-escape-sandbox, allow-top-navigation,
  * allow-top-navigation-by-user-activation, or allow-downloads.
  */
-import { isAllowedPlayerUrl } from "@/config/allowedPlayerHosts";
+import { isAllowedPlayerUrl, UNIVERSAL_IFRAME_SANDBOX } from "@/config/allowedPlayerHosts";
 import { cn } from "@/utils/helpers";
 
 type SafeThirdPartyFrameProps = {
@@ -33,7 +33,7 @@ export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFra
       allowFullScreen
       referrerPolicy="no-referrer"
       allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+      sandbox={UNIVERSAL_IFRAME_SANDBOX}
     />
   );
 }

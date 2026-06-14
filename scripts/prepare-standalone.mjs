@@ -18,14 +18,9 @@ if (!fs.existsSync(staticDir)) {
 fs.cpSync(staticDir, path.join(standaloneDir, ".next", "static"), { recursive: true });
 fs.cpSync(publicDir, path.join(standaloneDir, "public"), { recursive: true });
 
-const envSource = path.join(root, ".env.local");
-const envTarget = path.join(standaloneDir, ".env");
-
-if (fs.existsSync(envSource)) {
-  fs.copyFileSync(envSource, envTarget);
-  console.log("Copied .env.local into standalone bundle.");
-} else {
-  console.warn("No .env.local found. The packaged app will need environment variables configured.");
-}
-
+// Do NOT copy .env.local into the bundle — it leaks secrets into the packaged DMG.
+// Supply environment variables at runtime instead (e.g., via OS env or electron-builder config).
 console.log("Standalone bundle prepared for Electron.");
+console.warn(
+  "IMPORTANT: Environment variables are NOT embedded. Set them at runtime before launching the app.",
+);

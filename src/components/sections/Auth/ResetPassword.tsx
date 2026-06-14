@@ -4,7 +4,7 @@ import { ResetPasswordFormSchema } from "@/schemas/auth";
 import { env } from "@/utils/env";
 import { isEmpty } from "@/utils/helpers";
 import { LockPassword } from "@/utils/icons";
-import { useRouter } from "@bprogress/next/app";
+import { useRouter } from "next/navigation";
 import { addToast, Button } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Turnstile } from "@marsidev/react-turnstile";
@@ -31,7 +31,7 @@ const AuthResetPasswordForm: React.FC = () => {
   });
 
   const onSubmit = handleSubmit(async (data) => {
-    if (isEmpty(data.captchaToken)) {
+    if (env.NEXT_PUBLIC_CAPTCHA_SITE_KEY && isEmpty(data.captchaToken)) {
       setIsVerifying(true);
       return;
     }
@@ -93,7 +93,7 @@ const AuthResetPasswordForm: React.FC = () => {
         placeholder="Confirm your new password"
         startContent={<LockPassword className="text-xl" />}
       />
-      {isVerifying && (
+      {isVerifying && env.NEXT_PUBLIC_CAPTCHA_SITE_KEY && (
         <Turnstile
           className="flex h-fit w-full items-center justify-center"
           siteKey={env.NEXT_PUBLIC_CAPTCHA_SITE_KEY}

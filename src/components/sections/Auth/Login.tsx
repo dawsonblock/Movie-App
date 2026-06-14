@@ -10,7 +10,7 @@ import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthFormProps } from "./Forms";
 import { env } from "@/utils/env";
-import { useRouter } from "@bprogress/next/app";
+import { useRouter } from "next/navigation";
 import GoogleLoginButton from "@/components/ui/button/GoogleLoginButton";
 
 const AuthLoginForm: React.FC<AuthFormProps> = ({ setForm }) => {
@@ -32,7 +32,7 @@ const AuthLoginForm: React.FC<AuthFormProps> = ({ setForm }) => {
   });
 
   const onSubmit = handleSubmit(async (data) => {
-    if (isEmpty(data.captchaToken)) {
+    if (env.NEXT_PUBLIC_CAPTCHA_SITE_KEY && isEmpty(data.captchaToken)) {
       setIsVerifying(true);
       return;
     }
@@ -107,7 +107,7 @@ const AuthLoginForm: React.FC<AuthFormProps> = ({ setForm }) => {
             Forgot password?
           </Link>
         </div>
-        {isVerifying && (
+        {isVerifying && env.NEXT_PUBLIC_CAPTCHA_SITE_KEY && (
           <Turnstile
             className="flex h-fit w-full items-center justify-center"
             siteKey={env.NEXT_PUBLIC_CAPTCHA_SITE_KEY}

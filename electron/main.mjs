@@ -112,11 +112,6 @@ function waitForServer(port, timeoutMs = 60_000) {
 function startNextServer() {
   const { standaloneDir, serverEntry } = getServerEntry();
 
-  loadEnvFile(path.join(standaloneDir, ".env"));
-  loadEnvFile(path.join(standaloneDir, ".env.local"));
-  loadEnvFile(path.join(standaloneDir, ".env.production"));
-  loadEnvFile(path.join(standaloneDir, ".env.production.local"));
-
   if (isDev) {
     loadEnvFile(path.join(__dirname, "..", ".env.local"));
   }

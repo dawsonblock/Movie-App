@@ -78,6 +78,9 @@ export function isAllowedPlayerUrl(src: string): boolean {
   }
 }
 
+export const UNIVERSAL_IFRAME_SANDBOX =
+  "allow-scripts allow-same-origin allow-forms allow-presentation" as const;
+
 export function createPlayerSource(
   origin: AllowedPlayerOrigin,
   pathAndQuery: string,
