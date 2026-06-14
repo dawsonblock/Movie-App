@@ -5,15 +5,14 @@ const require = createRequire(import.meta.url);
 
 export default defineConfig({
   testDir: './e2e/electron',
-  fullyParallel: true,
+  fullyParallel: false, // Electron tests should run sequentially
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1, // Single worker for Electron tests
   reporter: 'html',
+  timeout: 60000, // Longer timeout for Electron tests
   use: {
-    launchOptions: {
-      args: ['--disable-gpu', '--disable-dev-shm-usage', '--no-sandbox'],
-    },
+    // Don't set default args that might conflict with Playwright's Electron launcher
   },
   projects: [
     {

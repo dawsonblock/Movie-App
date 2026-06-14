@@ -52,6 +52,106 @@ test.describe('Security Tests', () => {
       expect(hasBlockedEvents).toBeGreaterThan(0);
     });
 
+    test('should have proper iframe sandbox configuration for Electron compatibility', async ({ page }) => {
+      await page.goto('/test-hostile-iframe-container.html');
+      await page.waitForSelector('iframe', { timeout: 5000 });
+      
+      // Check iframe sandbox attribute matches Electron requirements
+      const iframeSandbox = await page.locator('iframe').getAttribute('sandbox');
+      
+      expect(iframeSandbox).toContain('allow-scripts');
+      expect(iframeSandbox).toContain('allow-same-origin');
+      expect(iframeSandbox).toContain('allow-forms');
+      expect(iframeSandbox).toContain('allow-presentation');
+      
+      // Verify dangerous permissions are NOT present (Electron security requirement)
+      expect(iframeSandbox).not.toContain('allow-popups');
+      expect(iframeSandbox).not.toContain('allow-top-navigation');
+      expect(iframeSandbox).not.toContain('allow-modals');
+      expect(iframeSandbox).not.toContain('allow-downloads');
+    });
+
+    test('should block sophisticated attack patterns', async ({ page }) => {
+      await page.goto('/test-hostile-iframe.html');
+      
+      // Wait for attack attempts to complete
+      await page.waitForTimeout(10000);
+      
+      // Check that various attacks were logged
+      const attemptsCount = await page.locator('#attempts .status').count();
+      expect(attemptsCount).toBeGreaterThan(0);
+      
+      // Check that some attacks were blocked
+      const blockedCount = await page.locator('#attempts .blocked').count();
+      expect(blockedCount).toBeGreaterThan(0);
+    });
+
+    test('should handle clickjacking attempts', async ({ page }) => {
+      await page.goto('/test-hostile-iframe.html');
+      
+      // Wait for clickjacking attempt
+      await page.waitForTimeout(7000);
+      
+      // Verify no hostile overlays exist in the main page
+      const hostileOverlays = await page.locator('[title="Hostile overlay"]').count();
+      expect(hostileOverlays).toBe(0);
+    });
+
+    test('should detect timing attacks', async ({ page }) => {
+      await page.goto('/test-hostile-iframe.html');
+      
+      // Wait for timing attack attempt
+      await page.waitForTimeout(8000);
+      
+      // Check that timing attack was logged
+      const timingAttackLogged = await page.locator('#attempts').filter({ hasText: 'timing attack' }).count();
+      expect(timingAttackLogged).toBeGreaterThan(0);
+    });
+
+    test('should block pointer events manipulation', async ({ page }) => {
+      await page.goto('/test-hostile-iframe.html');
+      
+      // Wait for pointer events attempt
+      await page.waitForTimeout(9000);
+      
+      // Check that pointer events manipulation was logged
+      const pointerEventsLogged = await page.locator('#attempts').filter({ hasText: 'pointer events' }).count();
+      expect(pointerEventsLogged).toBeGreaterThan(0);
+    });
+
+    test('should handle multiple concurrent attack attempts', async ({ page, context }) => {
+      // Track multiple security events
+      const popupPromise = context.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
+      const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
+      
+      await page.goto('/test-hostile-iframe-container.html');
+      await page.waitForSelector('iframe', { timeout: 5000 });
+      
+      // Wait for all attacks to complete
+      await page.evaluate(() => {
+        return new Promise<void>((resolve) => {
+          const checkComplete = () => {
+            window.removeEventListener('security-check-complete', checkComplete);
+            resolve();
+          };
+          window.addEventListener('security-check-complete', checkComplete);
+          
+          setTimeout(() => {
+            window.removeEventListener('security-check-complete', checkComplete);
+            resolve();
+          }, 12000);
+        });
+      });
+      
+      // Verify all attacks were blocked
+      const popup = await popupPromise;
+      const download = await downloadPromise;
+      
+      expect(popup).toBeNull();
+      expect(download).toBeNull();
+      expect(page.url()).toContain('/test-hostile-iframe-container.html');
+    });
+
     test('should block popup attempts from player iframe', async ({ page, context }) => {
       // Track popup events
       const popupPromise = context.waitForEvent('popup', { timeout: 5000 }).catch(() => null);
