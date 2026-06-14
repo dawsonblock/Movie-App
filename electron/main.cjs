@@ -1,18 +1,29 @@
-import { app, BrowserWindow, Menu } from "electron";
-import { spawn } from "node:child_process";
-import { createConnection } from "node:net";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const electron = require("electron");
+const { app, BrowserWindow, Menu } = electron;
+const { spawn } = require("node:child_process");
+const { createConnection } = require("node:net");
+const fs = require("node:fs");
+const path = require("node:path");
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const isDev = !app.isPackaged;
+const __dirname = path.dirname(__filename);
+const isTestMode = process.env.ELECTRON_TEST_MODE === 'true';
 const PORT = 45876;
+
+// Determine if we're in dev mode after app is ready
+let isDev = false;
 
 let mainWindow = null;
 let serverProcess = null;
 
 function getStandaloneDir() {
+  // In test mode, always use dev location
+  if (isTestMode) {
+    return path.join(__dirname, "..", ".next", "standalone");
+  }
+  
+  // Check if app is packaged
+  isDev = !app.isPackaged;
+  
   if (isDev) {
     return path.join(__dirname, "..", ".next", "standalone");
   }
@@ -112,7 +123,7 @@ function waitForServer(port, timeoutMs = 60_000) {
 function startNextServer() {
   const { standaloneDir, serverEntry } = getServerEntry();
 
-  if (isDev) {
+  if (isDev || isTestMode) {
     loadEnvFile(path.join(__dirname, "..", ".env.local"));
   }
 
@@ -203,7 +214,7 @@ async function createWindow() {
     minHeight: 700,
     title: "Cinextma",
     backgroundColor: "#0D0C0F",
-    show: false,
+    show: !isTestMode, // Don't show window in test mode
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     ...(process.platform === "darwin" ? { trafficLightPosition: { x: 14, y: 14 } } : {}),
     webPreferences: {
@@ -214,10 +225,15 @@ async function createWindow() {
   });
 
   mainWindow.once("ready-to-show", () => {
-    mainWindow?.show();
+    if (!isTestMode) {
+      mainWindow?.show();
+    }
   });
 
   mainWindow.webContents.setWindowOpenHandler(() => {
+    if (isTestMode) {
+      console.log('[Electron Security] setWindowOpenHandler blocked popup attempt');
+    }
     return { action: "deny" };
   });
 
@@ -227,13 +243,23 @@ async function createWindow() {
       !((u.hostname === "127.0.0.1" || u.hostname === "localhost") &&
         u.port === String(PORT))
     ) {
+      if (isTestMode) {
+        console.log(`[Electron Security] will-navigate blocked navigation to ${url}`);
+      }
       event.preventDefault();
     }
   });
 
   mainWindow.webContents.session.on("will-download", (event) => {
+    if (isTestMode) {
+      console.log('[Electron Security] will-download blocked download attempt');
+    }
     event.preventDefault();
   });
+
+  if (isTestMode) {
+    console.log('[Electron Security] All security handlers registered successfully');
+  }
 
   await mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
 }

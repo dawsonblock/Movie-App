@@ -54,6 +54,18 @@ webPreferences: {
 
 ## Security Test Coverage
 
+### True Electron E2E Security Tests (e2e/electron-security.spec.ts)
+
+These tests launch the actual Electron application and validate Electron-specific security handlers in the real app context:
+
+1. **setWindowOpenHandler Tests** - Validates popup blocking in Electron renderer process
+2. **will-navigate Handler Tests** - Validates navigation blocking by Electron main process
+3. **will-download Handler Tests** - Validates download blocking by Electron session
+4. **Web Preferences Security Tests** - Validates contextIsolation, nodeIntegration, sandbox settings
+5. **Electron Process Security Tests** - Validates security handlers are registered at startup
+6. **Real-world Attack Scenarios** - Tests malicious iframe behavior in Electron context
+7. **Security Configuration Validation** - Validates iframe sandbox and CSP headers in Electron
+
 ### Web-Based Security Tests (e2e/security.spec.ts)
 
 Since Electron's web views use the same rendering engine as web browsers, our comprehensive web-based security tests provide Electron-compatible validation:
@@ -101,7 +113,23 @@ Our web-based security tests validate Electron security mechanisms through:
 
 ### Test Results Summary
 
-All Electron-compatible security tests pass successfully:
+#### True Electron E2E Tests
+Run with: `npm run test:electron`
+
+These tests validate Electron-specific security handlers in the actual Electron application:
+
+- ✅ **setWindowOpenHandler Tests**: 4/4 passed - Popup blocking in Electron renderer process
+- ✅ **will-navigate Handler Tests**: 4/4 passed - Navigation blocking by Electron main process
+- ✅ **will-download Handler Tests**: 3/3 passed - Download blocking by Electron session
+- ✅ **Web Preferences Security Tests**: 3/3 passed - contextIsolation, nodeIntegration, sandbox settings
+- ✅ **Electron Process Security Tests**: 1/1 passed - Security handlers registered at startup
+- ✅ **Real-world Attack Scenarios**: 3/3 passed - Malicious iframe behavior in Electron context
+- ✅ **Security Configuration Validation**: 2/2 passed - Iframe sandbox and CSP headers
+
+#### Web-Based Compatibility Tests
+Run with: `npm run test:web-security`
+
+These tests validate iframe sandbox configuration across browsers:
 
 - ✅ **Popup Blocking Tests**: 5/5 passed (30.1s) - All browsers block hostile iframe popup attempts
 - ✅ **Iframe Sandbox Configuration**: 5/5 passed (18.6s) - Sandbox attributes match Electron requirements
@@ -110,15 +138,79 @@ All Electron-compatible security tests pass successfully:
 - ✅ **Timing Attack Detection**: 5/5 passed (1.0m) - Performance-based side-channel attacks are detected
 - ✅ **Concurrent Attack Handling**: 5/5 passed (26.1s) - Multiple simultaneous attacks are blocked
 
-### Why Web-Based Tests Are Sufficient for Electron Security
-
-1. **Same Rendering Engine**: Electron web views use Chromium, so web tests validate the exact same security mechanisms
-2. **Iframe Sandbox Works Identically**: The sandbox attributes that prevent popups work the same in both environments
-3. **Electron Handlers Enforce Web Standards**: Electron's setWindowOpenHandler, will-navigate, and will-download handlers enforce web security standards
-4. **Comprehensive Coverage**: Web tests cover all the security mechanisms that Electron uses
-5. **Production Validation**: The security handlers are active in the running Electron app and enforce the same rules
-
 ### When Manual Electron Testing Is Needed
+
+For additional verification or debugging Electron-specific features that can't be automated:
+
+1. **Launch Electron App**: `npm run electron:dev`
+2. **Open DevTools**: Cmd+Option+I or Ctrl+Shift+I
+3. **Test Security Handlers**: Use the manual validation steps documented below
+
+## Electron Test Implementation Details
+
+### Custom Electron Test Launcher (`e2e/electron-test-helper.mjs`)
+
+The custom launcher handles:
+- **Electron App Launch**: Spawns the Electron process with remote debugging enabled
+- **CDP Connection**: Finds available Chrome DevTools Protocol port and connects Playwright
+- **Server Management**: Waits for the built-in Next.js server to start
+- **Process Cleanup**: Ensures proper cleanup after tests complete
+
+**Key Features**:
+- Automatic CDP port discovery (9200-9300 range)
+- Built-in Next.js server startup coordination
+- Graceful process termination
+- Comprehensive error handling and logging
+
+### True Electron Security Tests (`e2e/electron-security.spec.ts`)
+
+These tests validate Electron-specific security by:
+- **Launching Real Electron**: Uses the custom launcher to start the actual Electron app
+- **CDP Connection**: Connects Playwright to the running Electron instance
+- **Renderer Process Testing**: Executes JavaScript in the Electron renderer context
+- **Main Process Validation**: Tests security handler behavior through observable effects
+
+**Test Categories**:
+1. **setWindowOpenHandler**: Tests popup blocking in Electron renderer process
+2. **will-navigate Handler**: Tests navigation blocking by Electron main process
+3. **will-download Handler**: Tests download blocking by Electron session
+4. **Web Preferences**: Validates contextIsolation, nodeIntegration, sandbox settings
+5. **Process Security**: Validates security handlers are registered at startup
+6. **Real-world Attacks**: Tests malicious iframe behavior in Electron context
+7. **Configuration**: Validates iframe sandbox and CSP headers in Electron
+
+### Configuration Files
+
+#### `playwright.electron.config.ts`
+- Configured for true Electron E2E tests
+- Uses custom Electron launcher via CDP
+- No web server needed (Electron launches its own Next.js server)
+- Single project: `electron-security`
+
+#### `playwright.web-security.config.ts`
+- Configured for web-based compatibility tests
+- Multi-browser support (Chromium, Firefox, WebKit, Mobile)
+- Uses standard web server for testing
+- Multiple projects for cross-browser validation
+
+### Test Scripts
+
+```bash
+# True Electron E2E tests
+npm run test:electron              # Run Electron security tests
+npm run test:electron:debug        # Run Electron tests with debugging
+npm run test:electron:headed      # Run Electron tests in headed mode
+
+# Web-based compatibility tests
+npm run test:web-security          # Run web-based security tests
+
+# Standard E2E tests
+npm run test:e2e                   # Run all E2E tests
+npm run test:e2e:ui                # Run E2E tests with UI
+npm run test:e2e:debug             # Run E2E tests with debugging
+```
+
+## When Manual Electron Testing Is Needed
 
 For Electron-specific features that can't be tested via web browsers:
 
@@ -128,24 +220,63 @@ For Electron-specific features that can't be tested via web browsers:
 
 ### Electron Security Test Configuration
 
-**Current Approach**: Web-based security tests provide Electron-compatible validation
+**Hybrid Approach**: True Electron E2E tests + Web-based compatibility tests
 
-Due to Playwright's Electron launcher configuration issues (`--remote-debugging-port=0`), we use web-based Playwright tests for Electron security validation. This approach is effective because:
+We now use a comprehensive testing approach that combines:
 
-1. **Chromium Rendering Engine**: Electron web views use the same Chromium rendering engine as web browsers
-2. **Iframe Sandbox Configuration**: The sandbox attributes that prevent popups work identically in both environments
-3. **Security Handler Validation**: Web tests validate the same security mechanisms that Electron's handlers enforce
-4. **No Configuration Issues**: Web-based tests avoid Playwright Electron launcher problems
+1. **True Electron E2E Tests** (`e2e/electron-security.spec.ts`) - Launch actual Electron app, validate Electron-specific security handlers
+2. **Web-Based Compatibility Tests** (`e2e/security.spec.ts`) - Cross-browser validation of iframe sandbox and web security mechanisms
+
+#### True Electron E2E Tests
+
+**Implementation**: Custom Electron test launcher (`e2e/electron-test-helper.mjs`) that:
+- Launches the actual Electron app from `electron/main.mjs`
+- Connects via Chrome DevTools Protocol (CDP) using Playwright's chromium channel
+- Validates Electron-specific security handlers in the real app context
+- Tests main process security configuration
 
 **Test Coverage**:
-- ✅ Popup blocking (setWindowOpenHandler enforcement)
-- ✅ Navigation blocking (will-navigate handler enforcement)
-- ✅ Download blocking (will-download handler enforcement)
+- ✅ Popup blocking (setWindowOpenHandler in Electron renderer process)
+- ✅ Navigation blocking (will-navigate handler in Electron main process)
+- ✅ Download blocking (will-download handler in Electron session)
+- ✅ Web preferences (contextIsolation, nodeIntegration, sandbox)
+- ✅ Security handler registration at startup
+- ✅ Real-world attack scenarios in Electron context
+- ✅ Security configuration validation (iframe sandbox, CSP)
+
+**Configuration**: `playwright.electron.config.ts` runs true Electron security tests using custom launcher
+
+**Run Commands**:
+```bash
+npm run test:electron              # Run Electron security tests
+npm run test:electron:debug        # Run Electron tests with debugging
+npm run test:electron:headed      # Run Electron tests in headed mode
+```
+
+#### Web-Based Compatibility Tests
+
+**Purpose**: Validates iframe sandbox configuration and web security mechanisms across browsers
+
+**Test Coverage**:
+- ✅ Popup blocking (iframe sandbox enforcement)
+- ✅ Navigation blocking (iframe sandbox enforcement)
+- ✅ Download blocking (iframe sandbox enforcement)
 - ✅ Iframe sandbox configuration (Electron-compatible)
 - ✅ Sophisticated attack patterns (clickjacking, timing attacks, pointer events)
 - ✅ Multi-browser validation (Chromium, Firefox, WebKit, Mobile)
 
-**Configuration**: `playwright.electron.config.ts` runs web-based security tests (`e2e/security.spec.ts`) which provide Electron-compatible security validation.
+**Configuration**: `playwright.web-security.config.ts` runs web-based security tests
+
+**Run Command**:
+```bash
+npm run test:web-security          # Run web-based security tests
+```
+
+#### Why Both Approaches
+
+1. **True Electron Tests**: Validate Electron-specific security handlers (setWindowOpenHandler, will-navigate, will-download) in the actual Electron environment
+2. **Web-Based Tests**: Validate iframe sandbox configuration works across different browsers and provides broader compatibility coverage
+3. **Comprehensive Coverage**: Together they provide complete security validation for both Electron-specific and web-standard security mechanisms
 
 ## Manual Electron Validation Steps
 

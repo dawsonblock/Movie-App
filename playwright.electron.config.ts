@@ -9,14 +9,18 @@ export default defineConfig({
   reporter: 'html',
   timeout: 60000,
   use: {
-    // Don't set any launch options that might conflict
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
   projects: [
     {
-      name: 'electron',
-      testMatch: '**/security.spec.ts',
+      name: 'electron-security',
+      testMatch: '**/electron-security.spec.ts',
       use: {
-        // Web-based tests provide Electron-compatible security validation
+        // These tests use custom Electron launcher via CDP
+        // No standard browser launch options needed
+        // No webServer needed - Electron launches its own Next.js server
+        baseURL: 'http://127.0.0.1:45876',
       },
     },
   ],

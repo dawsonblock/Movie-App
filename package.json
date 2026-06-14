@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "electron/main.mjs",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -12,6 +12,7 @@
     "electron:build": "next build && npm run electron:prepare",
     "electron:package": "npm run electron:build && electron-builder --mac dmg",
     "electron:dev": "npm run electron:build && electron .",
+    "electron:test": "npm run electron:build && cross-env ELECTRON_TEST_MODE=true electron .",
     "lint": "eslint .",
     "test": "vitest run",
     "test:ui": "vitest --ui",
@@ -19,6 +20,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
+    "test:electron": "npm run electron:build && playwright test --config=playwright.electron.config.ts",
+    "test:electron:debug": "npm run electron:build && playwright test --config=playwright.electron.config.ts --debug",
+    "test:electron:headed": "npm run electron:build && playwright test --config=playwright.electron.config.ts --headed",
+    "electron:test": "cross-env ELECTRON_TEST_MODE=true electron .",
+    "test:web-security": "playwright test --config=playwright.web-security.config.ts",
     "test:performance": "node scripts/performance-baseline.mjs",
     "test:performance:report": "node scripts/generate-performance-report.mjs",
     "test:load": "node load-tests/simple-load-test.mjs",
@@ -77,6 +83,7 @@
     "@vitejs/plugin-react": "^4.4.0",
     "@vitest/ui": "^3.0.0",
     "chrome-launcher": "^1.2.1",
+    "cross-env": "^7.0.3",
     "electron": "^35.1.5",
     "electron-builder": "^25.1.8",
     "eslint": "^9.33.0",
@@ -88,6 +95,7 @@
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4.1.12",
+    "ts-node": "^10.9.2",
     "typescript": "^5",
     "vitest": "^3.0.0",
     "webpack": "^5.101.2"
@@ -100,7 +108,8 @@
       "output": "dist-electron"
     },
     "files": [
-      "electron/**/*"
+      "electron/**/*",
+      "electron/main.cjs"
     ],
     "extraResources": [
       {
