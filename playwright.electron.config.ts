@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   testDir: './e2e',
@@ -14,10 +17,10 @@ export default defineConfig({
   projects: [
     {
       name: 'electron',
-      testMatch: '**/electron-security.spec.ts', // Dedicated Electron security tests
+      testMatch: '**/electron-security.spec.ts',
       use: {
-        // Electron-specific launch options
         launchOptions: {
+          executablePath: require('electron'),
           args: ['.'],
         },
       },

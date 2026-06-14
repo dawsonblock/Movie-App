@@ -126,9 +126,26 @@ For Electron-specific features that can't be tested via web browsers:
 2. **Open DevTools**: Cmd+Option+I or Ctrl+Shift+I
 3. **Test Security Handlers**: Use the manual validation steps documented below
 
+### Electron E2E Test File
+
+The Electron security test file exists at `e2e/electron-security.spec.ts` and contains comprehensive tests for:
+
+1. **setWindowOpenHandler** - Tests window.open blocking
+2. **will-navigate handler** - Tests external navigation blocking  
+3. **will-download handler** - Tests download blocking
+4. **webPreferences** - Tests security settings (contextIsolation, nodeIntegration, sandbox)
+5. **Hostile iframe attacks** - Tests iframe security in Electron context
+6. **Iframe sandbox configuration** - Verifies Electron-compatible sandbox attributes
+7. **Concurrent security threats** - Tests multiple simultaneous attacks
+
 ### Electron E2E Test Configuration Issue
 
-The Electron-specific E2E test file (`e2e/electron-security.spec.ts`) exists but cannot run due to Playwright's Electron launcher configuration issues (`--remote-debugging-port=0`). This is a known Playwright limitation.
+The Electron security test file exists but cannot run due to Playwright's Electron launcher configuration issues (`--remote-debugging-port=0`). This is a known Playwright limitation.
+
+**Current Status**: 
+- ✅ Test file exists at correct location (`e2e/electron-security.spec.ts`)
+- ✅ Configuration references correct file (`playwright.electron.config.ts`)
+- ❌ Tests cannot run due to Playwright configuration issue
 
 **Solution**: We rely on web-based security tests which provide equivalent coverage because:
 - Electron web views use the same Chromium rendering engine
