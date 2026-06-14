@@ -107,13 +107,13 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [lastEvent, setLastEvent] = useState<PlayerEventType | null>(null);
-  const [lastCurrentTime, setLastCurrentTime] = useState(0);
+  const lastCurrentTimeRef = useRef(0);
 
   const eventDataRef = useRef<UnifiedPlayerEventData | null>(null);
 
   const syncToStorage = (data: UnifiedPlayerEventData, completed?: boolean) => {
     if (!saveHistory || !media) return;
-    if (diff(data.currentTime, lastCurrentTime) <= 5) return;
+    if (diff(data.currentTime, lastCurrentTimeRef.current) <= 5) return;
 
     const payload: UnifiedPlayerEventData = {
       ...data,
@@ -133,7 +133,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
       },
       completed,
     );
-    if (result.success) setLastCurrentTime(data.currentTime);
+    if (result.success) lastCurrentTimeRef.current = data.currentTime;
     else console.error("Save history failed:", result.message);
   };
 
@@ -142,7 +142,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
     if (documentState === "visible") return;
     if (!eventDataRef.current) return;
     syncToStorage(eventDataRef.current);
-  }, [documentState, lastCurrentTime]);
+  }, [documentState]);
 
   useEffect(() => {
     const handleBeforeUnload = () => {

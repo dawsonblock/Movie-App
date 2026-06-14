@@ -23,6 +23,8 @@ const FullscreenToggleButton: React.FC = () => {
         variant="light"
       />
     );
+
+  return null;
 };
 
 export default FullscreenToggleButton;

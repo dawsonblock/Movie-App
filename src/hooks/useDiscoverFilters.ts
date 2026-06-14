@@ -59,7 +59,7 @@ const useDiscoverFilters = () => {
 
   useEffect(() => {
     clearQueries();
-  }, [content, queryType, genresString]);
+  }, [content, queryType, genresString, clearQueries]);
 
   return {
     types,

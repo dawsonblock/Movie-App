@@ -110,6 +110,8 @@ async function extractDominantColors(imageUrl: string, options: Options): Promis
       const ctx = canvas.getContext("2d");
 
       if (!ctx) {
+        img.onload = null;
+        img.onerror = null;
         reject(new Error("Failed to get canvas context"));
         return;
       }
@@ -131,8 +133,12 @@ async function extractDominantColors(imageUrl: string, options: Options): Promis
         .map((color) => {
           const [r, g, b, a] = color.split(",").map(Number);
           const hsvToString = formatToHsv({ r, g, b, a });
-          const { s, v } = parseHsvString(hsvToString);
-          return { r, g, b, a, count: colorMap[color], saturation: s * v };
+          try {
+            const { s, v } = parseHsvString(hsvToString);
+            return { r, g, b, a, count: colorMap[color], saturation: s * v };
+          } catch {
+            return { r, g, b, a, count: colorMap[color], saturation: 0 };
+          }
         })
         .sort((a, b) => (sortBy === "dominance" ? b.count - a.count : b.saturation - a.saturation));
 
@@ -146,6 +152,8 @@ async function extractDominantColors(imageUrl: string, options: Options): Promis
         lighterColor = getLighterColor(dominantColor);
       }
 
+      img.onload = null;
+      img.onerror = null;
       resolve({
         dominantColor: dominantColor,
         darkerColor: darkerColor,
@@ -155,6 +163,8 @@ async function extractDominantColors(imageUrl: string, options: Options): Promis
     };
 
     img.onerror = function (error) {
+      img.onload = null;
+      img.onerror = null;
       reject(error);
     };
 

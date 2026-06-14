@@ -36,7 +36,7 @@ const MovieDiscoverList = () => {
     if (inViewport && !isPending) {
       fetchNextPage();
     }
-  }, [inViewport]);
+  }, [inViewport, fetchNextPage, isPending]);
 
   if (status === "error") return notFound();
 

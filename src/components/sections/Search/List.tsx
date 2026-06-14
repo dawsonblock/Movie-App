@@ -51,7 +51,7 @@ const SearchList = () => {
     if (inViewport) {
       fetchNextPage();
     }
-  }, [inViewport]);
+  }, [inViewport, fetchNextPage]);
 
   useEffect(() => {
     queryClient.removeQueries({ queryKey: ["search-list"] });

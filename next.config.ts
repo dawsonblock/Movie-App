@@ -27,7 +27,7 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://image.tmdb.org http://image.tmdb.org https://dancyflix.com https://wallpapercave.com",
+      "img-src 'self' data: blob: https://image.tmdb.org https://dancyflix.com https://wallpapercave.com",
       "font-src 'self' data:",
       "connect-src 'self' https://api.themoviedb.org https://*.supabase.co http://127.0.0.1:54321 ws://127.0.0.1:54321 wss://*.supabase.co https://vitals.vercel-insights.com",
       `frame-src ${ALLOWED_PLAYER_FRAME_SRC.join(" ")}`,

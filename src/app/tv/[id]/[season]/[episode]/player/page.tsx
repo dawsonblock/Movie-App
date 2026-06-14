@@ -44,11 +44,11 @@ const TvShowPlayerPage: NextPage<Params<{ id: number; season: number; episode: n
     (e) => e.episode_number.toString() === episode.toString(),
   );
 
-  if (!EPISODE || errorTv || errorSeason) notFound();
+  if (!EPISODE || errorTv || errorSeason) return notFound();
 
   const isNotReleased = new Date(EPISODE.air_date) > new Date();
 
-  if (isNotReleased) notFound();
+  if (isNotReleased) return notFound();
 
   const currentEpisodeIndex = seasonDetail.episodes.findIndex(
     (e) => e.episode_number === EPISODE.episode_number,

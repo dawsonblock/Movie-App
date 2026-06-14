@@ -63,11 +63,13 @@ export function removeFromLibrary(id: number, type: ContentType): ActionResponse
   }
 }
 
-export function removeAllLibrary(type: ContentType): ActionResponse {
+export function removeAllLibrary(type: ContentType): ActionResponse<number> {
   try {
-    const library = getLibrary().filter((l) => l.type !== type);
-    saveLibrary(library);
-    return { success: true, message: "Removed items from watchlist successfully" };
+    const library = getLibrary();
+    const filtered = library.filter((l) => l.type !== type);
+    const count = library.length - filtered.length;
+    saveLibrary(filtered);
+    return { success: true, message: `Removed ${count} items from watchlist`, data: count };
   } catch {
     return { success: false, error: "Failed to remove items from watchlist" };
   }

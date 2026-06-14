@@ -35,7 +35,7 @@ const TvShowDiscoverList = () => {
     if (inViewport) {
       fetchNextPage();
     }
-  }, [inViewport]);
+  }, [inViewport, fetchNextPage]);
 
   if (status === "error") return notFound();
 

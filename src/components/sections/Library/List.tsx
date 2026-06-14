@@ -58,7 +58,7 @@ const LibraryList = () => {
     if (inViewport && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [inViewport]);
+  }, [inViewport, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const clearWatchlistMutation = useMutation({
     mutationFn: async (type: "movie" | "tv") => {
@@ -66,9 +66,7 @@ const LibraryList = () => {
       if (!result.success) {
         throw new Error(result.error || "Failed to clear watchlist");
       }
-      const allItems = data?.pages.flatMap((page) => page.data || []) || [];
-      const count = allItems.filter((item) => item.type === type).length;
-      return { type, count };
+      return { type, count: result.data ?? 0 };
     },
     onSuccess: ({ type, count }) => {
       queryClient.invalidateQueries({ queryKey: ["watchlist"] });

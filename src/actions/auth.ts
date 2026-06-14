@@ -164,7 +164,7 @@ const resetPasswordAction: AuthAction<ResetPasswordFormInput> = async (data, sup
 };
 
 export const signIn = createAuthAction(LoginFormSchema, signInWithEmailAction);
-export const signUp = createAuthAction(RegisterFormSchema, signUpAction, true);
+export const signUp = createAuthAction(RegisterFormSchema, signUpAction);
 export const sendResetPasswordEmail = createAuthAction(
   ForgotPasswordFormSchema,
   sendResetPasswordEmailAction,
