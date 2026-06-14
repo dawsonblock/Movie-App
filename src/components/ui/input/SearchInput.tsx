@@ -51,7 +51,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
       aria-label="Search"
       type="search"
       labelPlacement="outside"
-      disabled={isLoading}
+      isDisabled={isLoading}
       endContent={!props.value && <Kbd className="hidden md:inline-block">CTRL+K</Kbd>}
       startContent={
         <div className="text-default-400 pointer-events-none flex shrink-0 items-center pr-1">

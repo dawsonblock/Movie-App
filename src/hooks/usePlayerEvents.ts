@@ -111,25 +111,30 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
 
   const eventDataRef = useRef<UnifiedPlayerEventData | null>(null);
 
+  // Use refs to avoid stale closures in the message handler
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   const syncToStorage = (data: UnifiedPlayerEventData, completed?: boolean) => {
-    if (!saveHistory || !media) return;
+    const opts = optionsRef.current;
+    if (!opts.saveHistory || !opts.media) return;
     if (diff(data.currentTime, lastCurrentTimeRef.current) <= 5) return;
 
     const payload: UnifiedPlayerEventData = {
       ...data,
-      season: data.season || metadata?.season || 0,
-      episode: data.episode || metadata?.episode || 0,
+      season: data.season || opts.metadata?.season || 0,
+      episode: data.episode || opts.metadata?.episode || 0,
     };
 
     const result = syncLocalHistory(
       payload,
       {
-        adult: media.adult,
-        backdrop_path: media.backdrop_path,
-        poster_path: media.poster_path,
-        release_date: media.release_date,
-        title: media.title,
-        vote_average: media.vote_average,
+        adult: opts.media.adult,
+        backdrop_path: opts.media.backdrop_path,
+        poster_path: opts.media.poster_path,
+        release_date: opts.media.release_date,
+        title: opts.media.title,
+        vote_average: opts.media.vote_average,
       },
       completed,
     );
@@ -138,7 +143,7 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
   };
 
   useEffect(() => {
-    if (!saveHistory || !media) return;
+    if (!optionsRef.current.saveHistory || !optionsRef.current.media) return;
     if (documentState === "visible") return;
     if (!eventDataRef.current) return;
     syncToStorage(eventDataRef.current);
@@ -146,16 +151,17 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (!saveHistory || !media || !eventDataRef.current) return;
+      const opts = optionsRef.current;
+      if (!opts.saveHistory || !opts.media || !eventDataRef.current) return;
       syncLocalHistory(
         eventDataRef.current,
         {
-          adult: media.adult,
-          backdrop_path: media.backdrop_path,
-          poster_path: media.poster_path,
-          release_date: media.release_date,
-          title: media.title,
-          vote_average: media.vote_average,
+          adult: opts.media.adult,
+          backdrop_path: opts.media.backdrop_path,
+          poster_path: opts.media.poster_path,
+          release_date: opts.media.release_date,
+          title: opts.media.title,
+          vote_average: opts.media.vote_average,
         },
         eventDataRef.current.event === "ended",
       );
@@ -179,29 +185,30 @@ export function usePlayerEvents(options: UsePlayerEventsOptions = {}) {
       eventDataRef.current = parsed;
       setLastEvent(parsed.event);
 
+      const opts = optionsRef.current;
       switch (parsed.event) {
         case "play":
           setIsPlaying(true);
-          onPlay?.(parsed);
+          opts.onPlay?.(parsed);
           break;
         case "pause":
           setIsPlaying(false);
-          onPause?.(parsed);
+          opts.onPause?.(parsed);
           break;
         case "ended":
           setIsPlaying(false);
           syncToStorage(parsed, true);
-          onEnded?.(parsed);
+          opts.onEnded?.(parsed);
           break;
         case "seeked":
           setCurrentTime(parsed.currentTime);
           setDuration(parsed.duration);
-          onSeeked?.(parsed);
+          opts.onSeeked?.(parsed);
           break;
         case "timeupdate":
           setCurrentTime(parsed.currentTime);
           setDuration(parsed.duration);
-          onTimeUpdate?.(parsed);
+          opts.onTimeUpdate?.(parsed);
           break;
       }
     };

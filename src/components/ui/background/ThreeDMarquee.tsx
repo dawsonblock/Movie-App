@@ -41,11 +41,11 @@ const ThreeDMarquee: React.FC<ThreeDMarqueeProps> = ({ images, className, aspect
               >
                 <GridLineVertical className="-left-4" offset="80px" />
                 {subarray.map((image, imageIndex) => (
-                  <div className="relative" key={imageIndex + image}>
+                  <div className="relative" key={`${colIndex}-${imageIndex}`}>
                     <GridLineHorizontal className="-top-4" offset="20px" />
                     <motion.img
                       src={image}
-                      key={imageIndex + image}
+                      key={`img-${colIndex}-${imageIndex}`}
                       alt={`Image ${imageIndex + 1}`}
                       width={aspect === "video" ? 970 : 600}
                       height={aspect === "video" ? 700 : 400}

@@ -67,7 +67,7 @@ const ResumeCard: React.FC<ResumeCardProps> = ({ media }) => {
             aria-label="Watch progress"
             className="absolute bottom-0 z-10 w-full"
             color={media.type === "movie" ? "primary" : "warning"}
-            value={(media.last_position / media.duration) * 100}
+            value={media.duration > 0 ? (media.last_position / media.duration) * 100 : 0}
           />
           <div className="absolute bottom-0 z-2 h-1/2 w-full bg-linear-to-t from-black from-1%" />
           <div className="absolute bottom-0 z-3 flex w-full flex-col gap-1 p-3">
