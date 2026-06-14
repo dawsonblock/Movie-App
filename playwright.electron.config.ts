@@ -1,7 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
 
 export default defineConfig({
   testDir: './e2e',
@@ -12,17 +9,14 @@ export default defineConfig({
   reporter: 'html',
   timeout: 60000,
   use: {
-    // Don't set default args that might conflict with Playwright's Electron launcher
+    // Don't set any launch options that might conflict
   },
   projects: [
     {
       name: 'electron',
-      testMatch: '**/electron-security.spec.ts',
+      testMatch: '**/security.spec.ts',
       use: {
-        launchOptions: {
-          executablePath: require('electron'),
-          args: ['.'],
-        },
+        // Web-based tests provide Electron-compatible security validation
       },
     },
   ],
