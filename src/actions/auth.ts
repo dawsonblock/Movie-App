@@ -15,7 +15,6 @@ import {
 } from "@/schemas/auth";
 import { z } from "zod";
 import { ActionResponse } from "@/types";
-import { performMigration } from "@/utils/migration";
 
 /**
  * A generic type for our authentication actions.
@@ -85,12 +84,6 @@ const signInWithEmailAction: AuthAction<LoginFormInput> = async (data, supabase)
     };
   }
 
-  // Perform localStorage migration in the background
-  // This won't block the sign-in process
-  performMigration().catch((migrationError) => {
-    console.error("Background migration failed:", migrationError);
-  });
-
   return { success: true, message: `Welcome back, ${username.username}` };
 };
 
@@ -109,12 +102,6 @@ const signUpAction: AuthAction<RegisterFormInput> = async (data, supabase) => {
 
   if (signUpError) return { success: false, message: signUpError.message };
   if (!authData.user) return { success: false, message: "User not created. Please try again." };
-
-  // Perform localStorage migration in the background
-  // This won't block the sign-up process
-  performMigration().catch((migrationError) => {
-    console.error("Background migration failed:", migrationError);
-  });
 
   return {
     success: true,

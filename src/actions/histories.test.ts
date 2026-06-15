@@ -232,7 +232,7 @@ describe("Histories Actions", () => {
       expect(result).toBe(120);
     });
 
-    it("should return 0 if user is not authenticated", async () => {
+    it("should return undefined if user is not authenticated", async () => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: null },
         error: { message: "Not authenticated" },
@@ -240,10 +240,10 @@ describe("Histories Actions", () => {
 
       const result = await getMovieLastPosition(123);
 
-      expect(result).toBe(0);
+      expect(result).toBeUndefined();
     });
 
-    it("should return 0 if no history found", async () => {
+    it("should return undefined if no history found", async () => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: "user-123" } },
         error: null,
@@ -273,7 +273,7 @@ describe("Histories Actions", () => {
 
       const result = await getMovieLastPosition(123);
 
-      expect(result).toBe(0);
+      expect(result).toBeUndefined();
     });
   });
 
@@ -319,7 +319,7 @@ describe("Histories Actions", () => {
       expect(result).toBe(240);
     });
 
-    it("should return 0 if user is not authenticated", async () => {
+    it("should return undefined if user is not authenticated", async () => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: null },
         error: { message: "Not authenticated" },
@@ -327,7 +327,7 @@ describe("Histories Actions", () => {
 
       const result = await getTvShowLastPosition(456, 1, 1);
 
-      expect(result).toBe(0);
+      expect(result).toBeUndefined();
     });
   });
 });

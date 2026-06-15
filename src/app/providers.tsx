@@ -2,6 +2,7 @@
 
 import { CommandPalette } from "@/components/ui/overlay/CommandPalette";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useMigration } from "@/hooks/useMigration";
 import { PropsWithChildren, Suspense, useCallback, useState } from "react";
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
@@ -25,6 +26,9 @@ export default function Providers({ children }: PropsWithChildren) {
   useKeyboardShortcuts({
     onTogglePalette: togglePalette,
   });
+
+  // Trigger migration after authentication (client-side only)
+  useMigration();
 
   return (
     <QueryClientProvider client={queryClient}>

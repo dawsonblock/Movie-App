@@ -177,7 +177,7 @@ export const getMovieLastPosition = async (id: number): Promise<number | undefin
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return 0;
+      return undefined;
     }
 
     const { data, error } = await supabase
@@ -189,13 +189,13 @@ export const getMovieLastPosition = async (id: number): Promise<number | undefin
 
     if (error) {
       console.info("History fetch error:", error);
-      return 0;
+      return undefined;
     }
 
-    return data?.[0]?.last_position || 0;
+    return data?.[0]?.last_position;
   } catch (error) {
     console.info("Unexpected error:", error);
-    return 0;
+    return undefined;
   }
 };
 
@@ -214,7 +214,7 @@ export const getTvShowLastPosition = async (
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return 0;
+      return undefined;
     }
 
     const { data, error } = await supabase
@@ -228,12 +228,12 @@ export const getTvShowLastPosition = async (
 
     if (error) {
       console.info("History fetch error:", error);
-      return 0;
+      return undefined;
     }
 
-    return data?.[0]?.last_position || 0;
+    return data?.[0]?.last_position;
   } catch (error) {
     console.info("Unexpected error:", error);
-    return 0;
+    return undefined;
   }
 };

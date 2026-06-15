@@ -5,7 +5,7 @@ import Carousel from "@/components/ui/wrapper/Carousel";
 import useDiscoverFilters from "@/hooks/useDiscoverFilters";
 import ResumeCard from "./Cards/Resume";
 import { useQuery } from "@tanstack/react-query";
-import { getUserHistories } from "@/utils/localStorage/history";
+import { getUserHistories } from "@/actions/histories";
 
 const ContinueWatching: React.FC = () => {
   const { content } = useDiscoverFilters();
