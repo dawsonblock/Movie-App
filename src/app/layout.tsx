@@ -11,6 +11,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { cn } from "@/utils/helpers";
 import { IS_PRODUCTION, SpacingClasses } from "@/utils/constants";
+
+const IS_VERCEL = !!process.env.VERCEL;
 import dynamic from "next/dynamic";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Suspense } from "react";
@@ -71,8 +73,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </Providers>
           </NuqsAdapter>
         </Suspense>
-        <SpeedInsights debug={false} />
-        <Analytics debug={false} />
+        {IS_VERCEL && (
+          <>
+            <SpeedInsights debug={false} />
+            <Analytics debug={false} />
+          </>
+        )}
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 import { siteConfig } from "@/config/site";
 import { cn } from "@/utils/helpers";
 import { getTvShowPlayers } from "@/utils/players";
+import { getTvDownloadSources } from "@/utils/downloads";
 import { Card, Skeleton } from "@heroui/react";
 import { useDisclosure, useDocumentTitle, useIdle, useLocalStorage } from "@mantine/hooks";
 import dynamic from "next/dynamic";
@@ -11,6 +12,7 @@ import useBreakpoints from "@/hooks/useBreakpoints";
 import { ADS_WARNING_STORAGE_KEY, SpacingClasses } from "@/utils/constants";
 import { usePlayerEvents } from "@/hooks/usePlayerEvents";
 import { SafeThirdPartyFrame } from "@/components/player/SafeThirdPartyFrame";
+import { DownloadModal } from "@/components/player/DownloadModal";
 const AdsWarning = dynamic(() => import("@/components/ui/overlay/AdsWarning"));
 const TvShowPlayerHeader = dynamic(() => import("./Header"));
 const TvShowPlayerSourceSelection = dynamic(() => import("./SourceSelection"));
@@ -46,9 +48,15 @@ const TvShowPlayer: React.FC<TvShowPlayerProps> = ({
   const idle = useIdle(3000);
   const [sourceOpened, sourceHandlers] = useDisclosure(false);
   const [episodeOpened, episodeHandlers] = useDisclosure(false);
+  const [downloadOpened, downloadHandlers] = useDisclosure(false);
   const [selectedSource, setSelectedSource] = useQueryState<number>(
     "src",
     parseAsInteger.withDefault(0),
+  );
+
+  const downloadSources = useMemo(
+    () => getTvDownloadSources(props.seriesName, episode.season_number, episode.episode_number),
+    [props.seriesName, episode.season_number, episode.episode_number],
   );
 
   usePlayerEvents({
@@ -82,6 +90,7 @@ const TvShowPlayer: React.FC<TvShowPlayerProps> = ({
           selectedSource={selectedSource}
           onOpenSource={sourceHandlers.open}
           onOpenEpisode={episodeHandlers.open}
+          onOpenDownload={downloadHandlers.open}
           {...props}
         />
 
@@ -110,6 +119,12 @@ const TvShowPlayer: React.FC<TvShowPlayerProps> = ({
         opened={episodeOpened}
         onClose={episodeHandlers.close}
         episodes={episodes}
+      />
+      <DownloadModal
+        open={downloadOpened}
+        onClose={downloadHandlers.close}
+        title={`${props.seriesName} - ${props.seasonName} - ${episode.name}`}
+        sources={downloadSources}
       />
     </>
   );

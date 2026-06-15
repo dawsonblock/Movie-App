@@ -1,5 +1,5 @@
 import { cn } from "@/utils/helpers";
-import { ArrowLeft, Server } from "@/utils/icons";
+import { ArrowLeft, Download, Server } from "@/utils/icons";
 import ActionButton from "./ActionButton";
 
 interface MoviePlayerHeaderProps {
@@ -7,6 +7,7 @@ interface MoviePlayerHeaderProps {
   movieName: string;
   hidden?: boolean;
   onOpenSource: () => void;
+  onOpenDownload: () => void;
 }
 
 const MoviePlayerHeader: React.FC<MoviePlayerHeaderProps> = ({
@@ -14,6 +15,7 @@ const MoviePlayerHeader: React.FC<MoviePlayerHeaderProps> = ({
   movieName,
   hidden,
   onOpenSource,
+  onOpenDownload,
 }) => {
   return (
     <div
@@ -31,6 +33,9 @@ const MoviePlayerHeader: React.FC<MoviePlayerHeaderProps> = ({
         <p className="text-sm text-white text-shadow-lg sm:text-lg lg:text-xl">{movieName}</p>
       </div>
       <div className="flex items-center gap-4">
+        <ActionButton label="Download" tooltip="Download" onClick={onOpenDownload}>
+          <Download size={34} />
+        </ActionButton>
         <ActionButton label="Sources" tooltip="Sources" onClick={onOpenSource}>
           <Server size={34} />
         </ActionButton>

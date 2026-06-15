@@ -22,7 +22,8 @@ import {
   FaYoutube,
 } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
-import { FiLogOut } from "react-icons/fi";
+import { FiLogOut, FiExternalLink } from "react-icons/fi";
+import { IoDownloadOutline } from "react-icons/io5";
 import { GoArrowUpLeft } from "react-icons/go";
 import { HiArrowLongLeft, HiTrash } from "react-icons/hi2";
 import { ImCross } from "react-icons/im";
@@ -46,6 +47,8 @@ export {
   FaClock as Clock,
   IoIosClose as Close,
   MdContentCopy as Copy,
+  FiExternalLink as ExternalLink,
+  IoDownloadOutline as Download,
   ImCross as Cross,
   AiFillDislike as Dislike,
   IoEye as Eye,

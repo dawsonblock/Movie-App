@@ -18,10 +18,10 @@ describe("SafeThirdPartyFrame", () => {
     const iframe = screen.getByTitle("vidlink");
     expect(iframe).toBeInTheDocument();
     expect(iframe.tagName).toBe("IFRAME");
-    expect(iframe).toHaveAttribute(
-      "sandbox",
-      "allow-scripts allow-same-origin allow-forms allow-presentation",
-    );
+    // sandbox attribute is intentionally removed so third-party video players
+    // do not refuse to load. Electron handlers (setWindowOpenHandler,
+    // will-navigate, will-download) provide equivalent security.
+    expect(iframe).not.toHaveAttribute("sandbox");
   });
 
   it("shows a click-intercept overlay on first load", () => {

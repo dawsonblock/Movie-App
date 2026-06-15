@@ -322,22 +322,18 @@ test.describe('Security Tests', () => {
   });
 
   test.describe('Iframe Security', () => {
-    test('should have sandbox attribute on player iframe', async ({ page }) => {
+    test('player iframe does not use sandbox attribute so video players load', async ({ page }) => {
       await page.goto('/movie/550/player');
-      
+
       await page.waitForSelector('iframe', { timeout: 10000 });
-      
+
       const sandbox = await page.locator('iframe').getAttribute('sandbox');
-      
-      expect(sandbox).toContain('allow-scripts');
-      expect(sandbox).toContain('allow-same-origin');
-      expect(sandbox).toContain('allow-forms');
-      expect(sandbox).toContain('allow-presentation');
-      
-      // Verify dangerous permissions are not present
-      expect(sandbox).not.toContain('allow-popups');
-      expect(sandbox).not.toContain('allow-top-navigation');
-      expect(sandbox).not.toContain('allow-modals');
+
+      // sandbox is removed because third-party players (vidlink.pro, vidking.net,
+      // filmku.stream) detect it and refuse to render. Electron handlers
+      // (setWindowOpenHandler, will-navigate, will-download) provide equivalent
+      // protection at the native layer.
+      expect(sandbox).toBeNull();
     });
 
     test('should only allow whitelisted domains in iframe', async ({ page }) => {

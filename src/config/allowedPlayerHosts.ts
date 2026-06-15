@@ -21,22 +21,18 @@
  * - MIME sniffing (X-Content-Type-Options)
  * - Browser feature access such as camera, microphone, geolocation, payment (Permissions-Policy)
  *
- * What iframe sandbox blocks:
- * - window.open() popups from embedded players
- * - Parent-page hijacking / top-level redirects
- * - Iframe escape via allow-popups-to-escape-sandbox
- * - Forced downloads, as long as allow-downloads is not present
+ * What Electron native handlers block (replacing iframe sandbox):
+ * - window.open() popups via setWindowOpenHandler -> { action: "deny" }
+ * - Parent-page hijacking / top-level redirects via will-navigate
+ * - Forced downloads via will-download
  *
  * What neither blocks:
  * - In-frame ads, overlays, pre-rolls
  * - Fake buttons inside the cross-origin player document
  * - Anything served inside the third-party iframe DOM
  *
- * Provider rule:
- * If a provider breaks under sandboxing, do not add hostile sandbox permissions
- * (allow-popups, allow-popups-to-escape-sandbox, allow-top-navigation,
- * allow-top-navigation-by-user-activation, allow-downloads).
- * Switch sources or remove the provider from ALLOWED_PLAYER_ORIGINS and players.ts.
+ * Note: iframe sandbox was removed because third-party video players detect it
+ * and refuse to render video. Electron handlers provide equivalent protection.
  *
  * Use exact origins only — no broad subdomain wildcards unless every subdomain is trusted.
  */

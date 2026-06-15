@@ -147,18 +147,11 @@ test.describe('Movie Watching Flow', () => {
     
     // Wait for player to load
     await page.waitForSelector('iframe', { timeout: 10000 });
-    
-    // Check iframe sandbox attribute
+
+    // sandbox is removed so third-party video players do not refuse to load.
+    // Electron native handlers provide equivalent popup/navigation/download blocking.
     const iframe = page.locator('iframe');
     const sandbox = await iframe.getAttribute('sandbox');
-    
-    expect(sandbox).toContain('allow-scripts');
-    expect(sandbox).toContain('allow-same-origin');
-    expect(sandbox).toContain('allow-forms');
-    expect(sandbox).toContain('allow-presentation');
-    
-    // Check that dangerous permissions are not present
-    expect(sandbox).not.toContain('allow-popups');
-    expect(sandbox).not.toContain('allow-top-navigation');
+    expect(sandbox).toBeNull();
   });
 });

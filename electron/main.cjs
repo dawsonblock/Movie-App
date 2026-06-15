@@ -1,4 +1,15 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const electron = require('electron');
+
+if (!electron || typeof electron !== 'object' || !electron.app) {
+  console.error(
+    '[Electron Fatal] Built-in Electron modules are unavailable.\n' +
+    'This usually means ELECTRON_RUN_AS_NODE is set in the environment.\n' +
+    'Please unset ELECTRON_RUN_AS_NODE before launching Electron.',
+  );
+  process.exit(1);
+}
+
+const { app, BrowserWindow, Menu } = electron;
 const { spawn } = require('node:child_process');
 const { createConnection } = require('node:net');
 const fs = require('node:fs');
@@ -200,7 +211,10 @@ function buildMenu() {
         { role: "zoomIn" },
         { role: "zoomOut" },
         { type: "separator" },
-        { role: "togglefullscreen" },
+        {
+          role: "togglefullscreen",
+          accelerator: isMac ? "Cmd+Ctrl+F" : "F11",
+        },
       ],
     },
     {
@@ -232,7 +246,10 @@ async function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // sandbox must be false for video playback:
+      // hardware decoding and DRM (Widevine) require renderer OS access.
+      // Third-party embeds are still protected by the iframe sandbox attribute.
+      sandbox: false,
     },
   });
 
@@ -249,12 +266,48 @@ async function createWindow() {
     return { action: "deny" };
   });
 
-  mainWindow.webContents.on("will-navigate", (event, url) => {
+  // Enable fullscreen from the renderer (video player fullscreen button).
+  // Without these handlers the HTML5 Fullscreen API requests are silently ignored.
+  mainWindow.webContents.on("enter-html-full-screen", () => {
+    mainWindow.setFullScreen(true);
+  });
+
+  mainWindow.webContents.on("leave-html-full-screen", () => {
+    mainWindow.setFullScreen(false);
+  });
+
+  // Allow navigation to OAuth providers for login flows (Supabase auth + Google).
+  // The Supabase auth endpoint redirects to the provider, which then redirects
+  // back to the local app callback URL.
+  function isAllowedNavigation(url) {
     const u = new URL(url);
+    // Local app server is always allowed
     if (
-      !((u.hostname === "127.0.0.1" || u.hostname === "localhost") &&
-        u.port === String(PORT))
+      (u.hostname === "127.0.0.1" || u.hostname === "localhost") &&
+      u.port === String(PORT)
     ) {
+      return true;
+    }
+    // Supabase auth endpoint (e.g. signInWithOAuth redirects here first)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl) {
+      try {
+        const supabaseHost = new URL(supabaseUrl).hostname;
+        if (u.hostname === supabaseHost) return true;
+      } catch {
+        /* ignore malformed env var */
+      }
+    }
+    // Known OAuth providers
+    const allowedOAuthHosts = [
+      "accounts.google.com",
+    ];
+    if (allowedOAuthHosts.includes(u.hostname)) return true;
+    return false;
+  }
+
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (!isAllowedNavigation(url)) {
       if (isTestMode) {
         console.log(`[Electron Security] will-navigate blocked navigation to ${url}`);
       }

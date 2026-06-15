@@ -1,5 +1,5 @@
 import { cn } from "@/utils/helpers";
-import { ArrowLeft, List, Next, Prev, Server } from "@/utils/icons";
+import { ArrowLeft, Download, List, Next, Prev, Server } from "@/utils/icons";
 import ActionButton from "./ActionButton";
 import { TvShowPlayerProps } from "./Player";
 
@@ -8,6 +8,7 @@ interface TvShowPlayerHeaderProps extends Omit<TvShowPlayerProps, "episodes" | "
   selectedSource: number;
   onOpenSource: () => void;
   onOpenEpisode: () => void;
+  onOpenDownload: () => void;
 }
 
 const TvShowPlayerHeader: React.FC<TvShowPlayerHeaderProps> = ({
@@ -21,6 +22,7 @@ const TvShowPlayerHeader: React.FC<TvShowPlayerHeaderProps> = ({
   prevEpisodeNumber,
   onOpenSource,
   onOpenEpisode,
+  onOpenDownload,
 }) => {
   return (
     <div
@@ -56,6 +58,9 @@ const TvShowPlayerHeader: React.FC<TvShowPlayerHeaderProps> = ({
           href={`/tv/${id}/${episode.season_number}/${nextEpisodeNumber}/player?src=${selectedSource}`}
         >
           <Next size={42} />
+        </ActionButton>
+        <ActionButton label="Download" tooltip="Download" onClick={onOpenDownload}>
+          <Download size={34} />
         </ActionButton>
         <ActionButton label="Sources" tooltip="Sources" onClick={onOpenSource}>
           <Server size={34} />

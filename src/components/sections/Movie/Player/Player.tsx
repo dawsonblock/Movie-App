@@ -4,6 +4,7 @@ import useBreakpoints from "@/hooks/useBreakpoints";
 import { cn } from "@/utils/helpers";
 import { mutateMovieTitle } from "@/utils/movies";
 import { getMoviePlayers } from "@/utils/players";
+import { getMovieDownloadSources } from "@/utils/downloads";
 import { Card, Skeleton } from "@heroui/react";
 import { useDisclosure, useDocumentTitle, useIdle, useLocalStorage } from "@mantine/hooks";
 import dynamic from "next/dynamic";
@@ -12,6 +13,7 @@ import { useMemo } from "react";
 import { MovieDetails } from "tmdb-ts/dist/types/movies";
 import { usePlayerEvents } from "@/hooks/usePlayerEvents";
 import { SafeThirdPartyFrame } from "@/components/player/SafeThirdPartyFrame";
+import { DownloadModal } from "@/components/player/DownloadModal";
 const AdsWarning = dynamic(() => import("@/components/ui/overlay/AdsWarning"));
 const MoviePlayerHeader = dynamic(() => import("./Header"));
 const MoviePlayerSourceSelection = dynamic(() => import("./SourceSelection"));
@@ -32,9 +34,15 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, startAt }) => {
   const idle = useIdle(3000);
   const { mobile } = useBreakpoints();
   const [opened, handlers] = useDisclosure(false);
+  const [downloadOpened, downloadHandlers] = useDisclosure(false);
   const [selectedSource, setSelectedSource] = useQueryState<number>(
     "src",
     parseAsInteger.withDefault(0),
+  );
+
+  const downloadSources = useMemo(
+    () => getMovieDownloadSources(title, movie.release_date?.slice(0, 4)),
+    [title, movie.release_date],
   );
 
   usePlayerEvents({
@@ -62,6 +70,7 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, startAt }) => {
           id={movie.id}
           movieName={title}
           onOpenSource={handlers.open}
+          onOpenDownload={downloadHandlers.open}
           hidden={idle && !mobile}
         />
         <Card shadow="md" radius="none" className="relative h-screen">
@@ -83,6 +92,12 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, startAt }) => {
         players={players}
         selectedSource={selectedSource}
         setSelectedSource={setSelectedSource}
+      />
+      <DownloadModal
+        open={downloadOpened}
+        onClose={downloadHandlers.close}
+        title={title}
+        sources={downloadSources}
       />
     </>
   );

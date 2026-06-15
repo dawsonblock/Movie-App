@@ -1,15 +1,18 @@
 "use client";
 
 /**
- * Sandboxed wrapper for third-party player iframes.
+ * Wrapper for third-party player iframes.
  *
- * CSP (frame-src) controls which domains may load. This component's sandbox attribute
- * blocks popup/tab-hijack behavior from those embedded platforms — CSP does not do that.
+ * CSP (frame-src) controls which domains may load. The iframe `sandbox` attribute
+ * was removed because third-party video players (vidlink.pro, vidking.net, filmku.stream)
+ * detect sandboxing and refuse to render video, showing a "disable sandbox" message.
  *
- * Do not add: allow-popups, allow-popups-to-escape-sandbox, allow-top-navigation,
- * allow-top-navigation-by-user-activation, or allow-downloads.
+ * Security is preserved by Electron native handlers instead:
+ * - setWindowOpenHandler blocks all window.open() popups
+ * - will-navigate blocks navigation to external URLs
+ * - will-download blocks all download attempts
  */
-import { isAllowedPlayerUrl, UNIVERSAL_IFRAME_SANDBOX } from "@/config/allowedPlayerHosts";
+import { isAllowedPlayerUrl } from "@/config/allowedPlayerHosts";
 import { cn } from "@/utils/helpers";
 import { useState } from "react";
 
@@ -39,7 +42,6 @@ export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFra
         allowFullScreen
         referrerPolicy="strict-origin"
         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-        sandbox={UNIVERSAL_IFRAME_SANDBOX}
       />
       {!dismissed && (
         <div
