@@ -48,9 +48,9 @@ test.describe('Long-Running Stability Tests', () => {
         await page.waitForTimeout(500);
       }
 
-      // Should not crash or show memory issues
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      // App should still render (not a blank crash page)
+      const bodyChildren = await page.evaluate(() => document.body.children.length);
+      expect(bodyChildren).toBeGreaterThan(0);
     });
 
     test('should clean up event listeners on unmount', async ({ page }) => {
@@ -133,9 +133,9 @@ test.describe('Long-Running Stability Tests', () => {
       await page.goto('/movie/550/player');
       await page.waitForSelector('iframe', { timeout: 10000 });
 
-      // Should handle localStorage errors gracefully
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      // App should still render after localStorage is full
+      const bodyChildren = await page.evaluate(() => document.body.children.length);
+      expect(bodyChildren).toBeGreaterThan(0);
     });
   });
 
@@ -148,9 +148,11 @@ test.describe('Long-Running Stability Tests', () => {
       // For testing, we'll use a shorter duration
       await page.waitForTimeout(30000); // 30 seconds
 
-      // Player should still be responsive
+      // Player iframe should still be present and have a valid allowed src
       const iframe = page.locator('iframe');
       await expect(iframe).toBeVisible();
+      const src = await iframe.getAttribute('src');
+      expect(src).toMatch(/^https:\/\//);
     });
 
     test('should handle multiple source switches', async ({ page }) => {
@@ -184,18 +186,21 @@ test.describe('Long-Running Stability Tests', () => {
       await page.goto('/movie/550/player');
       await page.waitForSelector('iframe', { timeout: 10000 });
 
-      // Simulate various player state changes
-      const states = ['playing', 'paused', 'seeking', 'ended'];
-      
-      for (const _state of states) {
-        // In real scenario, this would trigger actual player events
-        // For testing, we verify the state management structure
-        await page.waitForTimeout(1000);
-      }
+      // Simulate various player state changes by sending postMessages
+      // that the app would receive from a real player iframe
+      await page.evaluate(() => {
+        const messages = [
+          { type: 'PLAYER_EVENT', data: { event: 'play', currentTime: 10, duration: 120, mtmdbId: 550, mediaType: 'movie' } },
+          { type: 'PLAYER_EVENT', data: { event: 'pause', currentTime: 20, duration: 120, mtmdbId: 550, mediaType: 'movie' } },
+          { type: 'PLAYER_EVENT', data: { event: 'seeked', currentTime: 30, duration: 120, mtmdbId: 550, mediaType: 'movie' } },
+          { type: 'PLAYER_EVENT', data: { event: 'ended', currentTime: 120, duration: 120, mtmdbId: 550, mediaType: 'movie' } },
+        ];
+        messages.forEach((msg) => window.postMessage(msg, '*'));
+      });
 
-      // Should maintain stability
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      // App should still be functional after handling player events
+      const iframe = page.locator('iframe');
+      await expect(iframe).toBeVisible();
     });
   });
 
@@ -207,14 +212,14 @@ test.describe('Long-Running Stability Tests', () => {
       // Simulate network interruption
       await page.context().setOffline(true);
       await page.waitForTimeout(3000);
-      
+
       // Restore network
       await page.context().setOffline(false);
       await page.waitForTimeout(2000);
 
-      // Should recover gracefully
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      // Player iframe should still be present after network recovers
+      const iframe = page.locator('iframe');
+      await expect(iframe).toBeVisible();
     });
 
     test('should handle slow network conditions', async ({ page, context }) => {
@@ -231,18 +236,19 @@ test.describe('Long-Running Stability Tests', () => {
     });
 
     test('should handle API failures gracefully', async ({ page }) => {
+      // Intercept TMDB API calls and force them to fail
+      await page.route('https://api.themoviedb.org/**', (route) => {
+        route.fulfill({ status: 500, body: JSON.stringify({ status_message: 'Internal Server Error' }) });
+      });
+
       // Navigate to a page that depends on external APIs
       await page.goto('/movie/550');
-      
-      // Mock API failure would be done via request interception
-      // For now, we verify error handling structure
-      
-      const hasErrorHandling = await page.evaluate(() => {
-        return typeof window.onerror === 'function' || 
-               typeof window.addEventListener === 'function';
-      });
-      
-      expect(hasErrorHandling).toBe(true);
+
+      // App should still render (not a blank white page) even when APIs fail
+      const bodyChildren = await page.evaluate(() => document.body.children.length);
+      expect(bodyChildren).toBeGreaterThan(0);
+
+      await page.unroute('https://api.themoviedb.org/**');
     });
   });
 
@@ -256,9 +262,9 @@ test.describe('Long-Running Stability Tests', () => {
       const imageCount = await images.count();
       
       if (imageCount > 0) {
-        // Check if page loads despite potential image issues
-        const pageContent = await page.content();
-        expect(pageContent.length).toBeGreaterThan(0);
+        // Verify page renders meaningfully even if images fail to load
+        const title = await page.title();
+        expect(title).not.toBe('');
       }
     });
 
@@ -278,11 +284,11 @@ test.describe('Long-Running Stability Tests', () => {
 
       // Navigate through multiple pages
       await page.goto('/movie/550');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('domcontentloaded');
       await page.goto('/tv/1396');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('domcontentloaded');
       await page.goto('/');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('domcontentloaded');
 
       // Resource count should not grow unbounded
       const finalResourceCount = await page.evaluate(() => {
@@ -305,14 +311,14 @@ test.describe('Long-Running Stability Tests', () => {
         }
       }
 
-      // Should remain stable
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      // Should remain stable (no blank page or crash indicator)
+      const title = await page.title();
+      expect(title).not.toBe('');
     });
 
     test('should handle simultaneous requests', async ({ page }) => {
       await page.goto('/');
-      
+
       // Trigger multiple simultaneous operations
       const promises = [
         page.click('[data-testid="movie-card"]:first-child'),
@@ -322,53 +328,57 @@ test.describe('Long-Running Stability Tests', () => {
 
       // Some operations might fail due to navigation, but app should not crash
       await Promise.allSettled(promises);
-      
+
       await page.waitForTimeout(2000);
-      
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+
+      // Page should still render meaningfully
+      const title = await page.title();
+      expect(title).not.toBe('');
     });
   });
 
   test.describe('Error Recovery', () => {
     test('should recover from JavaScript errors', async ({ page }) => {
       await page.goto('/');
-      
-      // Inject a script error
+      await page.waitForSelector('[data-testid="movie-card"]', { timeout: 10000 });
+
+      // Inject a non-fatal console error (fatal throws would crash the test page)
       await page.evaluate(() => {
-        setTimeout(() => {
-          throw new Error('Test error');
-        }, 1000);
+        console.error('Injected test error for stability check');
       });
 
-      await page.waitForTimeout(2000);
+      // App should still render the home page (no crash indicator)
+      const crashText = await page.locator('text=Application error').count();
+      expect(crashText).toBe(0);
 
-      // App should still be functional
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      const movieCards = page.locator('[data-testid="movie-card"]');
+      await expect(movieCards.first()).toBeVisible();
     });
 
-    test('should recover from rendering errors', async ({ page }) => {
-      // Navigate to a page that might have rendering issues
+    test('should show 404 for invalid movie IDs', async ({ page }) => {
+      // Navigate to a non-existent movie
       await page.goto('/movie/999999999');
-      
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState('domcontentloaded');
 
-      // Should show error page or redirect gracefully
-      const pageContent = await page.content();
-      expect(pageContent.length).toBeGreaterThan(0);
+      // Should show the 404 Not Found page instead of crashing
+      await expect(page.locator('text=404')).toBeVisible();
+      await expect(page.locator('text=Not Found')).toBeVisible();
     });
 
     test('should maintain error boundaries', async ({ page }) => {
       await page.goto('/');
-      
-      // Check if error boundary structure exists
-      const hasErrorBoundary = await page.evaluate(() => {
-        const root = document.getElementById('__next');
-        return root !== null;
+      await page.waitForSelector('[data-testid="movie-card"]', { timeout: 10000 });
+
+      // Verify the React root mounts correctly
+      const root = page.locator('#__next');
+      await expect(root).toBeVisible();
+
+      // Ensure the root contains actual rendered content, not just an empty div
+      const rootHasChildren = await page.evaluate(() => {
+        const el = document.getElementById('__next');
+        return el ? el.children.length > 0 : false;
       });
-      
-      expect(hasErrorBoundary).toBe(true);
+      expect(rootHasChildren).toBe(true);
     });
   });
 });

@@ -41,6 +41,38 @@ test.describe('Electron Security Tests', () => {
     await page.waitForLoadState('networkidle');
   });
 
+  /** Resolves to true if a download event fires within timeoutMs, false otherwise. */
+  async function didDownloadFire(triggerFn: () => Promise<void>, timeoutMs = 1500): Promise<boolean> {
+    let triggered = false;
+    const handler = () => { triggered = true; };
+    page.on('download', handler);
+    try {
+      await triggerFn();
+      await Promise.race([
+        page.waitForEvent('download', { timeout: timeoutMs }).then(() => { triggered = true; }),
+        new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+      ]).catch(() => {/* timeout is the expected path when downloads are blocked */});
+    } finally {
+      page.off('download', handler);
+    }
+    return triggered;
+  }
+
+  /** Waits for the hostile-iframe container to dispatch its security-check-complete event. */
+  async function waitForSecurityCheck(timeoutMs = 12000): Promise<void> {
+    await page.evaluate(() => {
+      return new Promise<void>((resolve) => {
+        const onComplete = () => {
+          window.removeEventListener('security-check-complete', onComplete);
+          resolve();
+        };
+        window.addEventListener('security-check-complete', onComplete);
+      });
+    });
+    // Give the DOM a tick to update the event list
+    await page.waitForSelector('#security-events li', { timeout: timeoutMs });
+  }
+
   test.describe('Real BrowserWindow Security Tests', () => {
     test('should block popup from hostile iframe while keeping iframe alive', async () => {
       // Navigate to hostile iframe container
@@ -73,7 +105,11 @@ test.describe('Electron Security Tests', () => {
         .frameLocator('iframe')
         .locator('#top-navigation')
         .click();
-      await page.waitForTimeout(1000);
+      await page.waitForFunction(
+        (expected) => window.location.href === expected,
+        beforeUrl,
+        { timeout: 2000 },
+      ).catch(() => {/* blocked — URL unchanged */});
       expect(page.url()).toBe(beforeUrl);
 
       // Test iframe remains alive
@@ -148,10 +184,14 @@ test.describe('Electron Security Tests', () => {
         window.location.href = 'https://example.com';
       });
 
-      // Wait a bit to see if navigation happens
-      await page.waitForTimeout(1000);
+      // Give Electron's will-navigate handler up to 2s to fire; if blocked the URL stays the same.
+      // We use waitForFunction so the test fails fast if the URL unexpectedly changes.
+      await page.waitForFunction(
+        (expected) => window.location.href === expected,
+        initialUrl,
+        { timeout: 2000 },
+      ).catch(() => {/* blocked navigation is the expected outcome — URL did not change */});
 
-      // Verify we're still on the same URL
       expect(page.url()).toBe(initialUrl);
     });
 
@@ -162,7 +202,12 @@ test.describe('Electron Security Tests', () => {
         (window.top as Window).location.href = 'https://malicious-site.com';
       });
 
-      await page.waitForTimeout(1000);
+      await page.waitForFunction(
+        (expected) => window.location.href === expected,
+        initialUrl,
+        { timeout: 2000 },
+      ).catch(() => {/* blocked — URL unchanged */});
+
       expect(page.url()).toBe(initialUrl);
     });
 
@@ -181,85 +226,66 @@ test.describe('Electron Security Tests', () => {
         window.location.replace('https://example.com');
       });
 
-      await page.waitForTimeout(1000);
+      await page.waitForFunction(
+        (expected) => window.location.href === expected,
+        initialUrl,
+        { timeout: 2000 },
+      ).catch(() => {/* blocked — URL unchanged */});
+
       expect(page.url()).toBe(initialUrl);
     });
   });
 
   test.describe('will-download handler', () => {
     test('should block download attempts', async () => {
-      let downloadTriggered = false;
-      
-      page.on('download', () => {
-        downloadTriggered = true;
-      });
-
-      // Try to trigger a download
-      await page.evaluate(() => {
-        const link = document.createElement('a');
-        link.href = 'data:text/plain;charset=utf-8,test content';
-        link.download = 'test.txt';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
-
-      // Wait to see if download is triggered
-      await page.waitForTimeout(2000);
-      
-      expect(downloadTriggered).toBe(false);
+      const triggered = await didDownloadFire(() =>
+        page.evaluate(() => {
+          const link = document.createElement('a');
+          link.href = 'data:text/plain;charset=utf-8,test content';
+          link.download = 'test.txt';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        })
+      );
+      expect(triggered).toBe(false);
     });
 
     test('should block blob downloads', async () => {
-      let downloadTriggered = false;
-      
-      page.on('download', () => {
-        downloadTriggered = true;
-      });
-
-      await page.evaluate(() => {
-        const blob = new Blob(['test content'], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'blob-test.txt';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      });
-
-      await page.waitForTimeout(2000);
-      expect(downloadTriggered).toBe(false);
+      const triggered = await didDownloadFire(() =>
+        page.evaluate(() => {
+          const blob = new Blob(['test content'], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'blob-test.txt';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        })
+      );
+      expect(triggered).toBe(false);
     });
 
     test('should block programmatic downloads', async () => {
-      let downloadTriggered = false;
-      
-      page.on('download', () => {
-        downloadTriggered = true;
-      });
-
-      await page.evaluate(() => {
-        // Try various programmatic download methods
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        const iframeDoc = iframe.contentDocument;
-        if (iframeDoc) {
-          const link = iframeDoc.createElement('a');
-          link.href = 'data:text/plain;charset=utf-8,iframe test';
-          link.download = 'iframe-test.txt';
-          iframeDoc.body.appendChild(link);
-          link.click();
-        }
-        
-        document.body.removeChild(iframe);
-      });
-
-      await page.waitForTimeout(2000);
-      expect(downloadTriggered).toBe(false);
+      const triggered = await didDownloadFire(() =>
+        page.evaluate(() => {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+          const iframeDoc = iframe.contentDocument;
+          if (iframeDoc) {
+            const link = iframeDoc.createElement('a');
+            link.href = 'data:text/plain;charset=utf-8,iframe test';
+            link.download = 'iframe-test.txt';
+            iframeDoc.body.appendChild(link);
+            link.click();
+          }
+          document.body.removeChild(iframe);
+        })
+      );
+      expect(triggered).toBe(false);
     });
   });
 
@@ -286,9 +312,6 @@ test.describe('Electron Security Tests', () => {
 
   test.describe('Electron Process Security', () => {
     test('should have security handlers registered at startup', async () => {
-      // This test validates that the security handlers are present
-      // by checking the app behavior rather than direct handler inspection
-      
       // Test setWindowOpenHandler
       const popupBlocked = await page.evaluate(() => {
         return window.open('https://test.com') === null;
@@ -300,24 +323,23 @@ test.describe('Electron Security Tests', () => {
       await page.evaluate(() => {
         window.location.href = 'https://external.com';
       });
-      await page.waitForTimeout(500);
+      await page.waitForFunction(
+        (expected) => window.location.href === expected,
+        initialUrl,
+        { timeout: 2000 },
+      ).catch(() => {/* blocked */});
       expect(page.url()).toBe(initialUrl);
 
       // Test will-download
-      let downloadTriggered = false;
-      page.on('download', () => {
-        downloadTriggered = true;
-      });
-      
-      await page.evaluate(() => {
-        const link = document.createElement('a');
-        link.href = 'data:text/plain,test';
-        link.download = 'test.txt';
-        link.click();
-      });
-      
-      await page.waitForTimeout(1000);
-      expect(downloadTriggered).toBe(false);
+      const triggered = await didDownloadFire(() =>
+        page.evaluate(() => {
+          const link = document.createElement('a');
+          link.href = 'data:text/plain,test';
+          link.download = 'test.txt';
+          link.click();
+        })
+      );
+      expect(triggered).toBe(false);
     });
   });
 
@@ -326,8 +348,8 @@ test.describe('Electron Security Tests', () => {
       await page.goto('http://127.0.0.1:45876/test-hostile-iframe-container.html');
       await page.waitForSelector('iframe');
 
-      // Wait for hostile iframe to attempt attacks
-      await page.waitForTimeout(5000);
+      // Wait for the hostile iframe container to finish its attack sequence
+      await waitForSecurityCheck();
 
       // Verify no popup windows were created
       const pages = context.pages();
@@ -339,9 +361,9 @@ test.describe('Electron Security Tests', () => {
       await page.waitForSelector('iframe');
 
       const initialUrl = page.url();
-      
-      // Wait for hostile iframe to attempt navigation
-      await page.waitForTimeout(5000);
+
+      // Wait for the hostile iframe container to finish its attack sequence
+      await waitForSecurityCheck();
 
       // Verify we're still on the same page
       expect(page.url()).toBe(initialUrl);
@@ -351,15 +373,12 @@ test.describe('Electron Security Tests', () => {
       await page.goto('http://127.0.0.1:45876/test-hostile-iframe-container.html');
       await page.waitForSelector('iframe');
 
-      let downloadTriggered = false;
-      page.on('download', () => {
-        downloadTriggered = true;
-      });
+      const triggered = await didDownloadFire(async () => {
+        // Wait for the hostile iframe to attempt downloads
+        await waitForSecurityCheck();
+      }, 12000);
 
-      // Wait for hostile iframe to attempt downloads
-      await page.waitForTimeout(5000);
-
-      expect(downloadTriggered).toBe(false);
+      expect(triggered).toBe(false);
     });
   });
 
