@@ -105,6 +105,7 @@ describe("syncLocalHistory error handling", () => {
           mediaId: 123,
           mediaType: "movie",
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         null as any
       );
 
@@ -120,7 +121,7 @@ describe("syncLocalHistory error handling", () => {
           currentTime: 30,
           duration: 120,
           mediaId: 123,
-          mediaType: "invalid" as any,
+          mediaType: "invalid" as unknown as "movie", // intentionally invalid for test
         },
         {
           adult: false,
@@ -220,7 +221,7 @@ describe("syncLocalHistory error handling", () => {
           event: "timeupdate",
           currentTime: 30,
           duration: 120,
-          mediaId: null as any,
+          mediaId: null as unknown as number, // intentionally invalid for test
           mediaType: "movie",
         },
         {

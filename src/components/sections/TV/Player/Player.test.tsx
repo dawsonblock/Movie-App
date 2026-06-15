@@ -1,10 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import TvShowPlayer from "./Player";
-import { TvShowDetails } from "tmdb-ts/dist/types/tv";
-import { Episode } from "tmdb-ts";
+import { type TvShowDetails, type Episode } from "tmdb-ts";
 
 describe("TvShowPlayer", () => {
-  const mockTvShow: TvShowDetails = {
+  const mockTvShow = {
     id: 123,
     name: "Test TV Show",
     backdrop_path: "/backdrop.jpg",
@@ -12,14 +11,32 @@ describe("TvShowPlayer", () => {
     first_air_date: "2024-01-01",
     vote_average: 8.5,
     overview: "Test overview",
-    genre_ids: [],
+    genres: [],
     original_language: "en",
     original_name: "Test TV Show",
     popularity: 100,
     vote_count: 1000,
-  };
+    created_by: [],
+    episode_run_time: [],
+    homepage: "",
+    in_production: false,
+    languages: [],
+    last_air_date: "",
+    last_episode_to_air: {} as TvShowDetails["last_episode_to_air"],
+    networks: [],
+    number_of_episodes: 0,
+    number_of_seasons: 0,
+    origin_country: [],
+    production_companies: [],
+    production_countries: [],
+    seasons: [],
+    spoken_languages: [],
+    status: "Ended",
+    tagline: "",
+    type: "Scripted",
+  } satisfies TvShowDetails;
 
-  const mockEpisode: Episode = {
+  const mockEpisode = {
     id: 456,
     name: "Test Episode",
     overview: "Episode overview",
@@ -30,7 +47,11 @@ describe("TvShowPlayer", () => {
     still_path: "/still.jpg",
     vote_average: 8.0,
     vote_count: 100,
-  };
+    crew: [],
+    guest_stars: [],
+    production_code: "",
+    show_id: 123,
+  } satisfies Episode;
 
   const mockEpisodes: Episode[] = [mockEpisode];
 

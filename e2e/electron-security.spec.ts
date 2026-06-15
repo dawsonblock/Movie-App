@@ -9,6 +9,7 @@ test.describe('Electron Security Tests', () => {
   let page: Page;
 
   test.beforeAll(async () => {
+    test.setTimeout(60000); // Electron startup can take up to 60s
     launcher = getElectronLauncher();
     const { cdpUrl } = await launcher.launch();
 
@@ -25,7 +26,7 @@ test.describe('Electron Security Tests', () => {
     }
     page = pages[0];
     await page.waitForURL(/http:\/\/127\.0\.0\.1:45876\/.*/);
-  }, 60000); // Increase timeout for Electron startup
+  });
 
   test.afterAll(async () => {
     if (page) await page.close();
@@ -89,7 +90,7 @@ test.describe('Electron Security Tests', () => {
         try {
           const popup = window.open('https://example.com', '_blank');
           return popup === null;
-        } catch (error) {
+        } catch (_error) {
           return true; // If it throws an error, that's also acceptable blocking
         }
       });
@@ -129,7 +130,7 @@ test.describe('Electron Security Tests', () => {
         try {
           const popup = iframe.contentWindow.window.open('https://example.com');
           return popup === null;
-        } catch (error) {
+        } catch (_error) {
           return true;
         }
       });
@@ -158,7 +159,7 @@ test.describe('Electron Security Tests', () => {
       const initialUrl = page.url();
       
       await page.evaluate(() => {
-        (window as any).top.location.href = 'https://malicious-site.com';
+        (window.top as Window).location.href = 'https://malicious-site.com';
       });
 
       await page.waitForTimeout(1000);

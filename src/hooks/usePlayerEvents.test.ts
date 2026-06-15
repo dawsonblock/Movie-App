@@ -75,8 +75,8 @@ describe("usePlayerEvents", () => {
         });
         
         // Get the message handler from the addEventListener calls
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -106,8 +106,8 @@ describe("usePlayerEvents", () => {
           origin: "https://vidlink.pro",
         });
         
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -137,8 +137,8 @@ describe("usePlayerEvents", () => {
           origin: "https://vidlink.pro",
         });
         
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -169,8 +169,8 @@ describe("usePlayerEvents", () => {
           origin: "https://vidlink.pro",
         });
         
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -201,8 +201,8 @@ describe("usePlayerEvents", () => {
           origin: "https://vidlink.pro",
         });
         
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -243,8 +243,8 @@ describe("usePlayerEvents", () => {
           origin: "https://vidlink.pro",
         });
         
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -283,8 +283,8 @@ describe("usePlayerEvents", () => {
           origin: "https://vidlink.pro",
         });
         
-        const addCalls = (window.addEventListener as vi.Mock).mock.calls;
-        const messageHandler = addCalls.find((call) => call[0] === "message")?.[1];
+        const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
         
         if (messageHandler) {
           messageHandler(messageEvent);

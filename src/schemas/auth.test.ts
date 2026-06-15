@@ -430,7 +430,7 @@ describe("Schema boundary tests", () => {
 
   describe("edge cases", () => {
     it("should handle whitespace in username", () => {
-      const result = AuthFormSchema.safeParse({
+      AuthFormSchema.safeParse({
         username: "test user",
         email: "test@example.com",
         password: "password123",
@@ -442,7 +442,7 @@ describe("Schema boundary tests", () => {
     });
 
     it("should handle unicode characters in username", () => {
-      const result = AuthFormSchema.safeParse({
+      AuthFormSchema.safeParse({
         username: "用户",
         email: "test@example.com",
         password: "password123",
@@ -454,7 +454,7 @@ describe("Schema boundary tests", () => {
 
     it("should handle very long email addresses", () => {
       const longEmail = `a${"a".repeat(100)}@example.com`;
-      const result = AuthFormSchema.safeParse({
+      AuthFormSchema.safeParse({
         username: "testuser",
         email: longEmail,
         password: "password123",

@@ -1,5 +1,4 @@
 import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN = "test_token";

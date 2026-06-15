@@ -4,7 +4,7 @@ test.describe('Long-Running Stability Tests', () => {
   test.describe('Memory Management', () => {
     test('should not leak memory during extended browsing', async ({ page }) => {
       const initialMemory = await page.evaluate(() => {
-        return (performance as any).memory?.usedJSHeapSize || 0;
+        return (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
       });
 
       // Simulate extended browsing session
@@ -18,7 +18,7 @@ test.describe('Long-Running Stability Tests', () => {
       }
 
       const finalMemory = await page.evaluate(() => {
-        return (performance as any).memory?.usedJSHeapSize || 0;
+        return (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
       });
 
       // Memory should not increase significantly (allow 50% increase)
@@ -56,14 +56,16 @@ test.describe('Long-Running Stability Tests', () => {
 
       // Check for event listener cleanup
       const listenerCountBefore = await page.evaluate(() => {
-        return window.getEventListeners ? Object.keys(window.getEventListeners(window)).length : 0;
+        const w = window as unknown as Record<string, (t: unknown) => Record<string, unknown>>;
+        return w.getEventListeners ? Object.keys(w.getEventListeners(window)).length : 0;
       });
 
       await page.goto('/');
       await page.waitForSelector('[data-testid="movie-card"]', { timeout: 10000 });
 
       const listenerCountAfter = await page.evaluate(() => {
-        return window.getEventListeners ? Object.keys(window.getEventListeners(window)).length : 0;
+        const w = window as unknown as Record<string, (t: unknown) => Record<string, unknown>>;
+        return w.getEventListeners ? Object.keys(w.getEventListeners(window)).length : 0;
       });
 
       // Listener count should not increase significantly
@@ -117,7 +119,7 @@ test.describe('Long-Running Stability Tests', () => {
         for (let i = 0; i < 1000; i++) {
           try {
             localStorage.setItem(`test-key-${i}`, 'x'.repeat(10000));
-          } catch (e) {
+          } catch (_e) {
             // Quota exceeded, stop
             break;
           }
@@ -182,7 +184,7 @@ test.describe('Long-Running Stability Tests', () => {
       // Simulate various player state changes
       const states = ['playing', 'paused', 'seeking', 'ended'];
       
-      for (const state of states) {
+      for (const _state of states) {
         // In real scenario, this would trigger actual player events
         // For testing, we verify the state management structure
         await page.waitForTimeout(1000);

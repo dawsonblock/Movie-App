@@ -64,7 +64,6 @@ describe("Auth Actions", () => {
 
       const result = await signIn({
         email: "test@example.com",
-        password: "wrongpassword",
         loginPassword: "wrongpassword",
       });
 

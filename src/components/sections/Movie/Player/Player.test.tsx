@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import MoviePlayer from "./Player";
-import { MovieDetails } from "tmdb-ts/dist/types/movies";
+import { type MovieDetails } from "tmdb-ts";
 
 describe("MoviePlayer", () => {
-  const mockMovie: MovieDetails = {
+  const mockMovie = {
     id: 123,
     title: "Test Movie",
     backdrop_path: "/backdrop.jpg",
@@ -12,13 +12,23 @@ describe("MoviePlayer", () => {
     vote_average: 8.5,
     adult: false,
     overview: "Test overview",
-    genre_ids: [],
+    genres: [],
     original_language: "en",
     original_title: "Test Movie",
     popularity: 100,
     video: false,
     vote_count: 1000,
-  };
+    budget: 0,
+    homepage: "",
+    imdb_id: null,
+    production_companies: [],
+    production_countries: [],
+    revenue: 0,
+    runtime: 120,
+    spoken_languages: [],
+    status: "Released",
+    tagline: "",
+  } satisfies MovieDetails;
 
   it("should have correct component structure", () => {
     // Just verify the component can be imported

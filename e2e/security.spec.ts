@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Security Tests', () => {
   test.describe('Popup Blocking', () => {
-    test('should block popup attempts from hostile iframe container', async ({ page, context }) => {
+    test('should block popup attempts from hostile iframe container', async ({ page }) => {
       // Track popup events
-      const popupPromise = context.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
+      const popupPromise = page.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
       
       // Track download events
       const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
@@ -119,9 +119,9 @@ test.describe('Security Tests', () => {
       expect(pointerEventsLogged).toBeGreaterThan(0);
     });
 
-    test('should handle multiple concurrent attack attempts', async ({ page, context }) => {
+    test('should handle multiple concurrent attack attempts', async ({ page }) => {
       // Track multiple security events
-      const popupPromise = context.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
+      const popupPromise = page.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
       const downloadPromise = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
       
       await page.goto('/test-hostile-iframe-container.html');
@@ -152,9 +152,9 @@ test.describe('Security Tests', () => {
       expect(page.url()).toContain('/test-hostile-iframe-container.html');
     });
 
-    test('should block popup attempts from player iframe', async ({ page, context }) => {
+    test('should block popup attempts from player iframe', async ({ page }) => {
       // Track popup events
-      const popupPromise = context.waitForEvent('popup', { timeout: 5000 }).catch(() => null);
+      const popupPromise = page.waitForEvent('popup', { timeout: 5000 }).catch(() => null);
       
       // Navigate to player page
       await page.goto('/movie/550/player');
@@ -199,7 +199,7 @@ test.describe('Security Tests', () => {
       expect(navigationBlocked).toBe(false);
     });
 
-    test('should block forced downloads', async ({ page, context }) => {
+    test('should block forced downloads', async ({ page }) => {
       // Track download events
       const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
       
@@ -217,7 +217,7 @@ test.describe('Security Tests', () => {
   test.describe('Content Security Policy', () => {
     test('should have CSP headers', async ({ page }) => {
       const response = await page.goto('/');
-      const cspHeader = await response.headerValue('Content-Security-Policy');
+      const cspHeader = await response!.headerValue('Content-Security-Policy');
       
       expect(cspHeader).toBeDefined();
       expect(cspHeader).toContain('default-src');
@@ -227,7 +227,7 @@ test.describe('Security Tests', () => {
 
     test('should not allow unsafe-eval in script-src', async ({ page }) => {
       const response = await page.goto('/');
-      const cspHeader = await response.headerValue('Content-Security-Policy');
+      const cspHeader = await response!.headerValue('Content-Security-Policy');
       
       expect(cspHeader).toBeDefined();
       expect(cspHeader).not.toContain('unsafe-eval');
@@ -235,7 +235,7 @@ test.describe('Security Tests', () => {
 
     test('should restrict frame sources to allowed domains', async ({ page }) => {
       const response = await page.goto('/movie/550/player');
-      const cspHeader = await response.headerValue('Content-Security-Policy');
+      const cspHeader = await response!.headerValue('Content-Security-Policy');
       
       expect(cspHeader).toBeDefined();
       expect(cspHeader).toContain('frame-src');
@@ -255,7 +255,7 @@ test.describe('Security Tests', () => {
       
       // Verify no alert was triggered (XSS prevented)
       const alertHandled = await page.evaluate(() => {
-        return window.alertTriggered === true;
+        return (window as unknown as Record<string, unknown>).alertTriggered === true;
       });
       
       expect(alertHandled).toBe(false);
@@ -267,7 +267,7 @@ test.describe('Security Tests', () => {
       
       // Should not execute the script
       const alertHandled = await page.evaluate(() => {
-        return window.alertTriggered === true;
+        return (window as unknown as Record<string, unknown>).alertTriggered === true;
       });
       
       expect(alertHandled).toBe(false);
@@ -375,9 +375,9 @@ test.describe('Security Tests', () => {
           if (!iframe) return false;
           
           // Try to access iframe content (should fail due to cross-origin)
-          const iframeWindow = (iframe as any).contentWindow;
+          const iframeWindow = (iframe as HTMLIFrameElement).contentWindow;
           return iframeWindow !== undefined;
-        } catch (e) {
+        } catch (_e) {
           // Expected to fail due to cross-origin restrictions
           return false;
         }
@@ -420,7 +420,7 @@ test.describe('Security Tests', () => {
   test.describe('HTTP Security Headers', () => {
     test('should have X-Frame-Options header', async ({ page }) => {
       const response = await page.goto('/');
-      const frameOptions = await response.headerValue('X-Frame-Options');
+      const frameOptions = await response!.headerValue('X-Frame-Options');
       
       // Should be DENY or SAMEORIGIN
       if (frameOptions) {
@@ -430,21 +430,21 @@ test.describe('Security Tests', () => {
 
     test('should have X-Content-Type-Options header', async ({ page }) => {
       const response = await page.goto('/');
-      const contentTypeOptions = await response.headerValue('X-Content-Type-Options');
+      const contentTypeOptions = await response!.headerValue('X-Content-Type-Options');
       
       expect(contentTypeOptions).toBe('nosniff');
     });
 
     test('should have Referrer-Policy header', async ({ page }) => {
       const response = await page.goto('/');
-      const referrerPolicy = await response.headerValue('Referrer-Policy');
+      const referrerPolicy = await response!.headerValue('Referrer-Policy');
       
       expect(referrerPolicy).toBeDefined();
     });
 
     test('should have X-XSS-Protection header', async ({ page }) => {
       const response = await page.goto('/');
-      const xssProtection = await response.headerValue('X-XSS-Protection');
+      const xssProtection = await response!.headerValue('X-XSS-Protection');
       
       if (xssProtection) {
         expect(xssProtection).toContain('1');
@@ -453,7 +453,7 @@ test.describe('Security Tests', () => {
 
     test('should have Strict-Transport-Security header in production', async ({ page }) => {
       const response = await page.goto('/');
-      const hsts = await response.headerValue('Strict-Transport-Security');
+      const hsts = await response!.headerValue('Strict-Transport-Security');
       
       // HSTS should be present in production, may be absent in development
       if (hsts) {
@@ -463,7 +463,7 @@ test.describe('Security Tests', () => {
 
     test('should not expose server version information', async ({ page }) => {
       const response = await page.goto('/');
-      const server = await response.headerValue('Server');
+      const server = await response!.headerValue('Server');
       
       // Server header should not contain specific version information
       if (server) {
@@ -473,7 +473,7 @@ test.describe('Security Tests', () => {
 
     test('should have proper Permissions-Policy header', async ({ page }) => {
       const response = await page.goto('/');
-      const permissionsPolicy = await response.headerValue('Permissions-Policy');
+      const permissionsPolicy = await response!.headerValue('Permissions-Policy');
       
       // Permissions-Policy should be present to restrict browser features
       expect(permissionsPolicy).toBeDefined();
@@ -538,7 +538,7 @@ test.describe('Security Tests', () => {
     test('should use HTTPS for external resources', async ({ page }) => {
       await page.goto('/');
       
-      const insecureResources = await page.evaluate(() => {
+      const _insecureResources = await page.evaluate(() => {
         const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
         return resources.filter(r => r.name.startsWith('http://')).length;
       });
@@ -560,7 +560,7 @@ test.describe('Security Tests', () => {
       const cookies = await context.cookies();
       
       // Check for secure cookie attributes in production
-      const secureCookies = cookies.filter(cookie => {
+      const _secureCookies = cookies.filter(cookie => {
         // In production, cookies should be secure and httpOnly
         return cookie.secure && cookie.httpOnly;
       });
@@ -584,7 +584,7 @@ test.describe('Security Tests', () => {
   test.describe('Cross-Site Scripting Prevention', () => {
     test('should implement Content Security Policy', async ({ page }) => {
       const response = await page.goto('/');
-      const csp = await response.headerValue('Content-Security-Policy');
+      const csp = await response!.headerValue('Content-Security-Policy');
       
       // CSP should be present
       expect(csp).toBeDefined();
@@ -597,7 +597,7 @@ test.describe('Security Tests', () => {
 
     test('should restrict script sources', async ({ page }) => {
       const response = await page.goto('/');
-      const csp = await response.headerValue('Content-Security-Policy');
+      const csp = await response!.headerValue('Content-Security-Policy');
       
       if (csp) {
         // Should have script-src directive

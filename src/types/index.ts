@@ -31,6 +31,7 @@ export type QueryList<T extends Movie | TV> = {
   name: string;
   query: () => Promise<{
     page: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     results: T[] | any[];
     total_results: number;
     total_pages: number;

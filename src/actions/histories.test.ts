@@ -43,7 +43,8 @@ describe("Histories Actions", () => {
       });
 
       const { tmdb } = await import("@/api/tmdb");
-      (tmdb.movies.details as any).mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tmdb.movies.details as unknown as { mockResolvedValue: (v: any) => void }).mockResolvedValue({
         adult: false,
         backdrop_path: "/path.jpg",
         poster_path: "/poster.jpg",
@@ -83,7 +84,8 @@ describe("Histories Actions", () => {
       });
 
       const { tmdb } = await import("@/api/tmdb");
-      (tmdb.tvShows.details as any).mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tmdb.tvShows.details as unknown as { mockResolvedValue: (v: any) => void }).mockResolvedValue({
         adult: false,
         backdrop_path: "/path.jpg",
         poster_path: "/poster.jpg",

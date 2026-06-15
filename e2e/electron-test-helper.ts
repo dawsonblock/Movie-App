@@ -2,16 +2,14 @@ import { spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.join(__dirname, '..');
-const ELECTRON_MAIN = path.join(PROJECT_ROOT, 'electron', 'main.cjs');
 const TEST_PORT = 45876; // Must match the port in electron/main.cjs
 const CDP_PORT_RANGE = { min: 9200, max: 9300 }; // Range for CDP ports
 
 class ElectronTestLauncher {
-  private electronProcess: any = null;
+  private electronProcess: ReturnType<typeof spawn> | null = null;
   private cdpPort: number | null = null;
   private isReady: boolean = false;
   private startTime: number | null = null;
@@ -24,7 +22,7 @@ class ElectronTestLauncher {
       try {
         await this.checkPortAvailable(port);
         return port;
-      } catch (error) {
+      } catch (_error) {
         // Port is in use, try next one
         continue;
       }
@@ -128,14 +126,14 @@ class ElectronTestLauncher {
     });
 
     // Log Electron output for debugging
-    this.electronProcess.stdout.on('data', (data: Buffer) => {
+    this.electronProcess.stdout?.on('data', (data: Buffer) => {
       const output = data.toString().trim();
       if (output) {
         console.log(`[Electron stdout] ${output}`);
       }
     });
 
-    this.electronProcess.stderr.on('data', (data: Buffer) => {
+    this.electronProcess.stderr?.on('data', (data: Buffer) => {
       const output = data.toString().trim();
       if (output) {
         console.error(`[Electron stderr] ${output}`);

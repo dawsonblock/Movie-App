@@ -6,6 +6,7 @@ import { ActionResponse } from "@/types";
 import { HistoryDetail } from "@/types/movie";
 import { mutateMovieTitle, mutateTvShowTitle } from "@/utils/movies";
 import { createClient } from "@/utils/supabase/server";
+import { type MovieDetails, type TvShowDetails } from "tmdb-ts";
 
 export const syncHistory = async (
   data: UnifiedPlayerEventData,
@@ -85,11 +86,15 @@ export const syncHistory = async (
           duration: data.duration,
           last_position: data.currentTime,
           completed: completed || false,
-          adult: data.mediaType === "movie" ? (media as any).adult : false,
+          adult: data.mediaType === "movie" ? (media as MovieDetails).adult : false,
           backdrop_path: media.backdrop_path,
           poster_path: media.poster_path,
-          release_date: data.mediaType === "movie" ? (media as any).release_date : (media as any).first_air_date,
-          title: data.mediaType === "movie" ? mutateMovieTitle(media as any) : mutateTvShowTitle(media as any),
+          release_date: data.mediaType === "movie"
+            ? (media as MovieDetails).release_date
+            : (media as TvShowDetails).first_air_date,
+          title: data.mediaType === "movie"
+            ? mutateMovieTitle(media as MovieDetails)
+            : mutateTvShowTitle(media as TvShowDetails),
           vote_average: media.vote_average,
         },
         {
