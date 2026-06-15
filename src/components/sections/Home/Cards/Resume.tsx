@@ -1,7 +1,6 @@
 "use client";
 
 import Rating from "@/components/ui/other/Rating";
-import type { LocalHistoryItem } from "@/utils/localStorage/history";
 import { cn } from "@/utils/helpers";
 import { PlayOutline } from "@/utils/icons";
 import { formatDuration, getImageUrl, timeAgo } from "@/utils/movies";
@@ -9,8 +8,25 @@ import { Chip, Image, Progress } from "@heroui/react";
 import Link from "next/link";
 import { useCallback } from "react";
 
+export interface HistoryItem {
+  media_id: number;
+  type: string;
+  season: number;
+  episode: number;
+  duration: number;
+  last_position: number;
+  completed: boolean;
+  adult: boolean;
+  backdrop_path: string | null;
+  poster_path: string | null;
+  release_date: string;
+  title: string;
+  vote_average: number;
+  updated_at: string;
+}
+
 interface ResumeCardProps {
-  media: LocalHistoryItem;
+  media: HistoryItem;
 }
 
 const ResumeCard: React.FC<ResumeCardProps> = ({ media }) => {

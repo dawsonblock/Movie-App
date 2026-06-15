@@ -1,6 +1,7 @@
 import { HISTORY_STORAGE_KEY } from "@/utils/constants";
 import { UnifiedPlayerEventData } from "@/hooks/usePlayerEvents";
 import { z } from "zod";
+import type { HistoryItem } from "@/components/sections/Home/Cards/Resume";
 
 const LocalHistoryMediaDetailsSchema = z.object({
   adult: z.boolean(),
@@ -26,21 +27,8 @@ const LocalHistoryDataSchema = z.object({
   episode: z.number().int().min(0).max(999).optional(),
 });
 
-export interface LocalHistoryItem {
-  media_id: number;
+export interface LocalHistoryItem extends HistoryItem {
   type: "movie" | "tv";
-  season: number;
-  episode: number;
-  duration: number;
-  last_position: number;
-  completed: boolean;
-  adult: boolean;
-  backdrop_path: string;
-  poster_path?: string | null;
-  release_date: string;
-  title: string;
-  vote_average: number;
-  updated_at: string;
 }
 
 interface ActionResponse<T = unknown> {
