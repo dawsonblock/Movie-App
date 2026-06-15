@@ -15,7 +15,9 @@
  * - Other sites embedding this app (frame-ancestors)
  *
  * What other security headers block/restrict:
- * - Referrer leakage (Referrer-Policy)
+ * - Referrer leakage (Referrer-Policy: strict-origin on iframes — sends origin only,
+ *   not full path; required so video CDNs can pass hotlink checks without exposing
+ *   the full player URL. Do not use no-referrer: providers blank the video stream.)
  * - MIME sniffing (X-Content-Type-Options)
  * - Browser feature access such as camera, microphone, geolocation, payment (Permissions-Policy)
  *

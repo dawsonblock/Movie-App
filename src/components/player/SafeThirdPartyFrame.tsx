@@ -37,7 +37,7 @@ export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFra
         title={title}
         className={cn("h-full w-full", className)}
         allowFullScreen
-        referrerPolicy="no-referrer"
+        referrerPolicy="strict-origin"
         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
         sandbox={UNIVERSAL_IFRAME_SANDBOX}
       />
