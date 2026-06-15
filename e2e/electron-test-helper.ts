@@ -125,7 +125,6 @@ class ElectronTestLauncher {
         NODE_ENV: 'test',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true, // Use shell to ensure the electron CLI works cross-platform
     });
 
     // Log Electron output for debugging

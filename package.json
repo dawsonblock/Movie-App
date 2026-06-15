@@ -7,13 +7,14 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "electron-forge start",
     "electron:prepare": "node scripts/prepare-standalone.mjs",
     "electron:build": "next build && npm run electron:prepare",
     "electron:package": "npm run electron:build && electron-builder --mac dmg",
     "electron:dev": "npm run electron:build && electron .",
     "electron:test": "npm run electron:build && cross-env ELECTRON_TEST_MODE=true electron .",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
@@ -28,13 +29,16 @@
     "test:performance:report": "node scripts/generate-performance-report.mjs",
     "test:load": "node load-tests/simple-load-test.mjs",
     "test:load:k6": "k6 run load-tests/api-load-test.js",
-    "security-guard": "node scripts/security-guard.mjs",
-    "verify": "npm run security-guard && npm run build && npm run lint && npm run test",
+    "security:guard": "node scripts/security-guard.mjs",
+    "verify": "npm run security:guard && npm run typecheck && npm run lint && npm run test && npm run build",
+    "verify:electron": "npm run security:guard && npm run electron:test",
     "sb-start": "supabase start --debug --ignore-health-check",
     "sb-stop": "supabase stop --debug --all",
     "sb-restart": "supabase stop --debug --all && supabase start --debug --ignore-health-check",
     "sb-db-reset": "supabase db reset",
-    "sb-db-types": "supabase gen types typescript --local > src/utils/supabase/types.ts"
+    "sb-db-types": "supabase gen types typescript --local > src/utils/supabase/types.ts",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "dependencies": {
     "@bprogress/next": "^3.2.12",
@@ -50,6 +54,7 @@
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "date-fns": "^4.1.0",
+    "electron": "^42.4.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
     "next": "16.2.1",
@@ -70,6 +75,7 @@
     "zod": "^4.1.1"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
     "@iconify/react": "^6.0.0",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.60.0",
@@ -84,8 +90,6 @@
     "@vitest/ui": "^3.0.0",
     "chrome-launcher": "^1.2.1",
     "cross-env": "^7.0.3",
-    "electron": "^35.1.5",
-    "electron-builder": "^25.1.8",
     "eslint": "^9.33.0",
     "eslint-config-next": "16.2.1",
     "jsdom": "^26.0.0",
@@ -109,17 +113,14 @@
     },
     "files": [
       "electron/**/*",
-      "electron/main.cjs"
+      "electron/main.cjs",
+      ".next/standalone/**/*",
+      ".next/static/**/*",
+      "public/**/*"
     ],
-    "extraResources": [
-      {
-        "from": ".next/standalone",
-        "to": "standalone",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
     "mac": {
       "category": "public.app-category.entertainment",
       "target": [

@@ -49,7 +49,6 @@ describe("Auth Actions", () => {
 
       const result = await signIn({
         email: "test@example.com",
-        password: "password123",
         loginPassword: "password123",
       });
 
@@ -96,7 +95,6 @@ describe("Auth Actions", () => {
 
       const result = await signIn({
         email: "test@example.com",
-        password: "password123",
         loginPassword: "password123",
       });
 

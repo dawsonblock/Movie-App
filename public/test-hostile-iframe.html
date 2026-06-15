@@ -36,6 +36,12 @@
 
     <div id="attempts"></div>
 
+    <div style="margin-top: 20px;">
+        <h3>Manual Test Buttons:</h3>
+        <button id="open-popup" style="padding: 10px; margin: 5px;">Open Popup</button>
+        <button id="top-navigation" style="padding: 10px; margin: 5px;">Top Navigation</button>
+    </div>
+
     <script>
         const statusText = document.getElementById('status-text');
         const attemptsDiv = document.getElementById('attempts');
@@ -226,6 +232,38 @@
         setTimeout(() => {
             statusText.textContent = 'All hostile attempts completed';
             statusText.style.color = 'blue';
+
+        // Manual test buttons for E2E testing
+        document.getElementById('open-popup')?.addEventListener('click', () => {
+            logAttempt('window.open', 'Manual popup attempt');
+            try {
+                const popup = window.open('https://example.com', '_blank');
+                if (popup) {
+                    logAttempt('window.open', 'Popup opened (BLOCKING FAILED!)');
+                    statusText.textContent = 'SECURITY FAILURE: Popup opened';
+                    statusText.style.color = 'red';
+                } else {
+                    logBlocked('window.open');
+                    statusText.textContent = 'Popup blocked';
+                }
+            } catch (e) {
+                logBlocked('window.open (exception)');
+                statusText.textContent = 'Popup blocked (exception)';
+            }
+        });
+
+        document.getElementById('top-navigation')?.addEventListener('click', () => {
+            logAttempt('top.location.href', 'Manual top navigation attempt');
+            try {
+                window.top.location.href = 'https://malicious-site.com';
+                logAttempt('top.location.href', 'Top navigation succeeded (BLOCKING FAILED!)');
+                statusText.textContent = 'SECURITY FAILURE: Top navigation succeeded';
+                statusText.style.color = 'red';
+            } catch (e) {
+                logBlocked('top.location.href (access blocked)');
+                statusText.textContent = 'Top navigation blocked';
+            }
+        });
         }, 9000);
     </script>
 </body>

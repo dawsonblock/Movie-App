@@ -1,9 +1,8 @@
-const electron = require("electron");
-const { app, BrowserWindow, Menu } = electron;
-const { spawn } = require("node:child_process");
-const { createConnection } = require("node:net");
-const fs = require("node:fs");
-const path = require("node:path");
+const { app, BrowserWindow, Menu } = require('electron');
+const { spawn } = require('node:child_process');
+const { createConnection } = require('node:net');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const isTestMode = process.env.ELECTRON_TEST_MODE === 'true';
 const PORT = 45876;

@@ -11,11 +11,20 @@ test.describe('Electron Security Tests', () => {
   test.beforeAll(async () => {
     launcher = getElectronLauncher();
     const { cdpUrl } = await launcher.launch();
-    
+
     // Connect to Electron via CDP
     browser = await chromium.connectOverCDP(cdpUrl);
-    context = await browser.newContext();
-    page = await context.newPage();
+    const contexts = browser.contexts();
+    if (contexts.length === 0) {
+      throw new Error("No Electron browser context found");
+    }
+    context = contexts[0];
+    const pages = context.pages();
+    if (pages.length === 0) {
+      throw new Error("No Electron BrowserWindow page found");
+    }
+    page = pages[0];
+    await page.waitForURL(/http:\/\/127\.0\.0\.1:45876\/.*/);
   }, 60000); // Increase timeout for Electron startup
 
   test.afterAll(async () => {
@@ -29,6 +38,48 @@ test.describe('Electron Security Tests', () => {
     // Navigate to the app before each test
     await page.goto('http://127.0.0.1:45876');
     await page.waitForLoadState('networkidle');
+  });
+
+  test.describe('Real BrowserWindow Security Tests', () => {
+    test('should block popup from hostile iframe while keeping iframe alive', async () => {
+      // Navigate to hostile iframe container
+      await page.goto('http://127.0.0.1:45876/test-hostile-iframe-container.html');
+      await page.waitForSelector('iframe');
+
+      // Test popup blocking
+      const popupPromise = page.waitForEvent('popup', { timeout: 2000 }).catch(() => null);
+      await page
+        .frameLocator('iframe')
+        .locator('#open-popup')
+        .click();
+      const popup = await popupPromise;
+      expect(popup).toBeNull();
+
+      // Test iframe remains alive
+      await expect(
+        page.frameLocator('iframe').locator('body')
+      ).toBeVisible();
+    });
+
+    test('should block top-navigation from hostile iframe while keeping iframe alive', async () => {
+      // Navigate to hostile iframe container
+      await page.goto('http://127.0.0.1:45876/test-hostile-iframe-container.html');
+      await page.waitForSelector('iframe');
+
+      // Test top-navigation blocking
+      const beforeUrl = page.url();
+      await page
+        .frameLocator('iframe')
+        .locator('#top-navigation')
+        .click();
+      await page.waitForTimeout(1000);
+      expect(page.url()).toBe(beforeUrl);
+
+      // Test iframe remains alive
+      await expect(
+        page.frameLocator('iframe').locator('body')
+      ).toBeVisible();
+    });
   });
 
   test.describe('setWindowOpenHandler', () => {

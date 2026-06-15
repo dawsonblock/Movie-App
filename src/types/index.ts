@@ -31,7 +31,7 @@ export type QueryList<T extends Movie | TV> = {
   name: string;
   query: () => Promise<{
     page: number;
-    results: T[];
+    results: T[] | any[];
     total_results: number;
     total_pages: number;
   }>;
