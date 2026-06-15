@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
 const EXCLUDED_DIRS = ["node_modules", ".git", ".next", "dist-electron"];
-const INCLUDED_EXTENSIONS = [".ts", ".tsx", ".mjs", ".js", ".jsx", ".html"];
+const INCLUDED_EXTENSIONS = [".ts", ".tsx", ".mjs", ".cjs", ".js", ".jsx", ".html"];
 const GUARD_SCRIPT_NAME = "security-guard.mjs";
 
 function getAllowedSandboxConstant() {
