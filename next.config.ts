@@ -36,7 +36,7 @@ const securityHeaders = [
       "font-src 'self' data:",
       "connect-src 'self' https://api.themoviedb.org https://*.supabase.co http://127.0.0.1:54321 ws://127.0.0.1:54321 wss://*.supabase.co https://vitals.vercel-insights.com",
       `frame-src ${ALLOWED_PLAYER_FRAME_SRC.join(" ")}`,
-      "frame-ancestors 'none'",
+      "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",

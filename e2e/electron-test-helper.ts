@@ -121,6 +121,9 @@ class ElectronTestLauncher {
         ...process.env,
         ELECTRON_TEST_MODE: 'true',
         NODE_ENV: 'test',
+        // Prevent ELECTRON_RUN_AS_NODE from leaking into test Electron processes.
+        // If set, Electron runs as plain Node.js and built-in modules (app, etc.) are unavailable.
+        ELECTRON_RUN_AS_NODE: '',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });

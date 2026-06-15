@@ -41,21 +41,29 @@ test.describe('Electron Security Tests', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  /** Resolves to true if a download event fires within timeoutMs, false otherwise. */
-  async function didDownloadFire(triggerFn: () => Promise<void>, timeoutMs = 1500): Promise<boolean> {
-    let triggered = false;
-    const handler = () => { triggered = true; };
+  /**
+   * Resolves to true only if a download is actually allowed to complete.
+   * Electron's will-download handler cancels blocked downloads, but Playwright's
+   * CDP integration may still emit a download-start event. We verify the download
+   * was not canceled by checking download.failure() after a short grace period.
+   */
+  async function didDownloadFire(triggerFn: () => Promise<void>, timeoutMs = 3000): Promise<boolean> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let download: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = (d: any) => { download = d; };
     page.on('download', handler);
     try {
       await triggerFn();
-      await Promise.race([
-        page.waitForEvent('download', { timeout: timeoutMs }).then(() => { triggered = true; }),
-        new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
-      ]).catch(() => {/* timeout is the expected path when downloads are blocked */});
+      // Give Electron's will-download handler time to cancel the download
+      await page.waitForTimeout(timeoutMs);
     } finally {
       page.off('download', handler);
     }
-    return triggered;
+    if (!download) return false;
+    // A canceled download returns a failure reason; a successful one returns null.
+    const failure = await download.failure();
+    return failure === null;
   }
 
   /** Waits for the hostile-iframe container to dispatch its security-check-complete event. */
