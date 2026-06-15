@@ -8,6 +8,12 @@ vi.mock("@/utils/localStorage/history", () => ({
   syncLocalHistory: vi.fn(),
 }));
 
+// Mock syncHistory server action — default to throwing so the localStorage fallback is tested
+const mockSyncHistory = vi.fn();
+vi.mock("@/actions/histories", () => ({
+  syncHistory: (...args: unknown[]) => mockSyncHistory(...args),
+}));
+
 // Mock useDocumentVisibility
 vi.mock("@mantine/hooks", () => ({
   useDocumentVisibility: vi.fn(() => "visible"),
@@ -19,6 +25,8 @@ describe("usePlayerEvents", () => {
     // Mock window.addEventListener and removeEventListener
     window.addEventListener = vi.fn();
     window.removeEventListener = vi.fn();
+    // Default: syncHistory throws so the localStorage fallback path is exercised
+    mockSyncHistory.mockRejectedValue(new Error("No server context in test"));
   });
 
   afterEach(() => {
@@ -76,7 +84,7 @@ describe("usePlayerEvents", () => {
         
         // Get the message handler from the addEventListener calls
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -107,7 +115,7 @@ describe("usePlayerEvents", () => {
         });
         
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -138,7 +146,7 @@ describe("usePlayerEvents", () => {
         });
         
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -170,7 +178,7 @@ describe("usePlayerEvents", () => {
         });
         
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -202,7 +210,7 @@ describe("usePlayerEvents", () => {
         });
         
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
         
         if (messageHandler) {
           messageHandler(messageEvent);
@@ -215,7 +223,7 @@ describe("usePlayerEvents", () => {
   });
 
   describe("history saving", () => {
-    it("should save history when saveHistory is enabled", () => {
+    it("should save history when saveHistory is enabled and playback ends", async () => {
       const media = {
         id: 123,
         title: "Test Movie",
@@ -228,13 +236,14 @@ describe("usePlayerEvents", () => {
 
       renderHook(() => usePlayerEvents({ media, saveHistory: true }));
 
-      act(() => {
+      await act(async () => {
         const messageEvent = new MessageEvent("message", {
           data: JSON.stringify({
             type: "PLAYER_EVENT",
             data: {
-              event: "timeupdate",
-              currentTime: 30,
+              // "ended" triggers syncToStorage immediately in the message handler
+              event: "ended",
+              currentTime: 115,
               duration: 120,
               mtmdbId: 123,
               mediaType: "movie",
@@ -242,17 +251,18 @@ describe("usePlayerEvents", () => {
           }),
           origin: "https://vidlink.pro",
         });
-        
+
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
-        
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
+
         if (messageHandler) {
           messageHandler(messageEvent);
         }
+        // Allow the async syncToStorage promise chain to fully settle
+        await new Promise((r) => setTimeout(r, 50));
       });
 
-      // History saving is handled internally, we just verify the hook doesn't crash
-      expect(true).toBe(true);
+      expect(syncLocalHistory).toHaveBeenCalled();
     });
 
     it("should not save history when saveHistory is disabled", () => {
@@ -284,7 +294,7 @@ describe("usePlayerEvents", () => {
         });
         
         const addCalls = (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls;
-        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1];
+        const messageHandler = addCalls.find((call: unknown[]) => call[0] === "message")?.[1] as ((e: MessageEvent) => void) | undefined;
         
         if (messageHandler) {
           messageHandler(messageEvent);

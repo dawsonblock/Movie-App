@@ -21,6 +21,9 @@ test.describe('Long-Running Stability Tests', () => {
         return (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
       });
 
+      // Skip ratio check when performance.memory is unavailable (non-Chrome / no --enable-precise-memory-info)
+      if (initialMemory === 0) return;
+
       // Memory should not increase significantly (allow 50% increase)
       const memoryIncrease = (finalMemory - initialMemory) / initialMemory;
       expect(memoryIncrease).toBeLessThan(0.5);

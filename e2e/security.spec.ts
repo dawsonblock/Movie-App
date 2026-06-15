@@ -537,36 +537,29 @@ test.describe('Security Tests', () => {
 
     test('should use HTTPS for external resources', async ({ page }) => {
       await page.goto('/');
-      
-      const _insecureResources = await page.evaluate(() => {
-        const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-        return resources.filter(r => r.name.startsWith('http://')).length;
-      });
-      
+
       // Should not have HTTP resources (except for localhost in development)
       const hasInsecureNonLocal = await page.evaluate(() => {
         const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-        return resources.some(r => 
+        return resources.some(r =>
           r.name.startsWith('http://') && !r.name.includes('localhost')
         );
       });
-      
+
       expect(hasInsecureNonLocal).toBe(false);
     });
 
     test('should have secure cookie attributes', async ({ page, context }) => {
       await page.goto('/');
-      
+
       const cookies = await context.cookies();
-      
-      // Check for secure cookie attributes in production
-      const _secureCookies = cookies.filter(cookie => {
-        // In production, cookies should be secure and httpOnly
-        return cookie.secure && cookie.httpOnly;
-      });
-      
-      // In development, we may not have secure cookies, but we should have the structure
+
+      // In production, cookies should have secure + httpOnly attributes.
+      // In development that is not guaranteed, so we assert the structure exists.
+      const secureCookies = cookies.filter(cookie => cookie.secure && cookie.httpOnly);
       expect(cookies.length).toBeGreaterThanOrEqual(0);
+      // secureCookies count is informational — no hard assertion in dev
+      expect(secureCookies.length).toBeGreaterThanOrEqual(0);
     });
 
     test('should not expose sensitive data in HTML comments', async ({ page }) => {

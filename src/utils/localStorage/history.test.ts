@@ -96,7 +96,7 @@ describe("syncLocalHistory error handling", () => {
   });
 
   describe("invalid input handling", () => {
-    it("should handle missing media details", () => {
+    it("should return failure when media details are null", () => {
       const result = syncLocalHistory(
         {
           event: "timeupdate",
@@ -109,12 +109,12 @@ describe("syncLocalHistory error handling", () => {
         null as any
       );
 
-      // The function doesn't validate media details, so it might succeed or fail
-      // We just check it returns a result
-      expect(result).toBeDefined();
+      // Zod validation rejects null media details
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/Invalid media details/);
     });
 
-    it("should handle invalid media type", () => {
+    it("should return failure when media type is invalid", () => {
       const result = syncLocalHistory(
         {
           event: "timeupdate",
@@ -133,12 +133,12 @@ describe("syncLocalHistory error handling", () => {
         }
       );
 
-      // The function doesn't validate media type at runtime
-      // We just check it returns a result
-      expect(result).toBeDefined();
+      // Zod enum validation rejects unknown media types
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/Invalid data/);
     });
 
-    it("should handle negative currentTime", () => {
+    it("should return failure when currentTime is negative", () => {
       const result = syncLocalHistory(
         {
           event: "timeupdate",
@@ -157,16 +157,16 @@ describe("syncLocalHistory error handling", () => {
         }
       );
 
-      // The function doesn't validate currentTime at runtime
-      // We just check it returns a result
-      expect(result).toBeDefined();
+      // Zod .min(0) rejects negative currentTime
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/Invalid data/);
     });
 
-    it("should handle zero or negative duration", () => {
+    it("should succeed when duration is zero", () => {
       const result = syncLocalHistory(
         {
           event: "timeupdate",
-          currentTime: 30,
+          currentTime: 0,
           duration: 0,
           mediaId: 123,
           mediaType: "movie",
@@ -181,17 +181,14 @@ describe("syncLocalHistory error handling", () => {
         }
       );
 
-      // This might be valid depending on implementation
-      // The test documents current behavior
-      expect(result).toBeDefined();
+      // Zero duration is permitted by Zod .min(0)
+      expect(result.success).toBe(true);
     });
   });
 
   describe("data corruption handling", () => {
-    it("should handle corrupted localStorage data", () => {
-      global.localStorage.getItem = vi.fn(() => {
-        return "invalid json data";
-      });
+    it("should succeed and overwrite corrupted localStorage data", () => {
+      global.localStorage.getItem = vi.fn(() => "invalid json data");
 
       const result = syncLocalHistory(
         {
@@ -211,11 +208,12 @@ describe("syncLocalHistory error handling", () => {
         }
       );
 
-      // Should handle gracefully and either succeed with new data or fail safely
-      expect(result).toBeDefined();
+      // getHistory() catches JSON.parse error and returns [], then saves new item
+      expect(result.success).toBe(true);
+      expect(result.message).toBe("History saved");
     });
 
-    it("should handle malformed mediaId", () => {
+    it("should return failure when mediaId is null", () => {
       const result = syncLocalHistory(
         {
           event: "timeupdate",
@@ -234,9 +232,9 @@ describe("syncLocalHistory error handling", () => {
         }
       );
 
-      // The function tries to convert mediaId to Number, which might result in 0
-      // We just check it returns a result
-      expect(result).toBeDefined();
+      // Zod .int().positive() rejects null (coerced to 0, which fails .positive())
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/Invalid data/);
     });
   });
 
