@@ -151,19 +151,32 @@ function stopNextServer() {
 }
 
 function buildMenu() {
+  const isMac = process.platform === "darwin";
+
   const template = [
-    {
-      label: app.getName(),
-      submenu: [
-        { role: "about" },
-        { type: "separator" },
-        { role: "hide" },
-        { role: "hideOthers" },
-        { role: "unhide" },
-        { type: "separator" },
-        { role: "quit" },
-      ],
-    },
+    // macOS-only app menu with roles that only exist on Darwin
+    ...(isMac
+      ? [
+          {
+            label: app.getName(),
+            submenu: [
+              { role: "about" },
+              { type: "separator" },
+              { role: "hide" },
+              { role: "hideOthers" },
+              { role: "unhide" },
+              { type: "separator" },
+              { role: "quit" },
+            ],
+          },
+        ]
+      : [
+          // Minimal File menu for Windows/Linux
+          {
+            label: "File",
+            submenu: [{ role: "quit" }],
+          },
+        ]),
     {
       label: "Edit",
       submenu: [
@@ -195,8 +208,9 @@ function buildMenu() {
       submenu: [
         { role: "minimize" },
         { role: "close" },
-        { type: "separator" },
-        { role: "front" },
+        ...(isMac
+          ? [{ type: "separator" }, { role: "front" }]
+          : []),
       ],
     },
   ];

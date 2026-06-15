@@ -111,32 +111,31 @@
             securityEvents.appendChild(li);
         }
         
-        // Update parent status
-        setTimeout(() => {
+        // Update parent status as soon as DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
             parentStatus.textContent = 'Parent page stable - monitoring for hostile attempts';
             parentStatus.style.color = 'green';
-        }, 1000);
-        
-        // Check security status after hostile attempts should have occurred
-        setTimeout(() => {
+        });
+
+        function runSecurityValidation() {
             if (!parentNavigated) {
                 addBlockedEvent('✓ Parent navigation blocked');
             } else {
                 addSecurityEvent('✗ Parent navigation NOT blocked');
             }
-            
+
             if (!popupOpened) {
                 addBlockedEvent('✓ Popup opening blocked');
             } else {
                 addSecurityEvent('✗ Popup opening NOT blocked');
             }
-            
+
             if (!downloadTriggered) {
                 addBlockedEvent('✓ Download blocked');
             } else {
                 addSecurityEvent('✗ Download NOT blocked');
             }
-            
+
             // Check for clickjacking attempts
             const clickjackingAttempts = document.querySelectorAll('[title="Hostile overlay"]');
             if (clickjackingAttempts.length === 0) {
@@ -144,19 +143,29 @@
             } else {
                 addSecurityEvent('✗ Clickjacking attempts detected');
             }
-            
+
             parentStatus.textContent = 'Security check complete';
-            
+
             // Set a custom event for test synchronization
             window.dispatchEvent(new CustomEvent('security-check-complete'));
-        }, 10000);
-        
+        }
+
         // Listen for messages from the hostile iframe
         window.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'hostile-iframe-test') {
                 addSecurityEvent('Message received from hostile iframe: ' + event.data.message);
             }
+            if (event.data && event.data.type === 'hostile-iframe-all-done') {
+                runSecurityValidation();
+            }
         });
+
+        // Fallback: if the iframe never signals completion, run validation after a generous timeout
+        setTimeout(() => {
+            if (parentStatus.textContent !== 'Security check complete') {
+                runSecurityValidation();
+            }
+        }, 5000);
     </script>
 </body>
 </html>

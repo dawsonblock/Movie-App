@@ -60,6 +60,18 @@
             attemptsDiv.appendChild(div);
         }
 
+        let completedAttacks = 0;
+        const TOTAL_ATTACKS = 8;
+
+        function signalComplete() {
+            completedAttacks++;
+            if (completedAttacks >= TOTAL_ATTACKS) {
+                window.top.postMessage({ type: 'hostile-iframe-all-done' }, '*');
+                statusText.textContent = 'All hostile attempts completed';
+                statusText.style.color = 'blue';
+            }
+        }
+
         // Attempt 1: window.open popup
         setTimeout(() => {
             logAttempt('window.open', 'Trying to open popup to https://example.com');
@@ -77,7 +89,8 @@
                 logBlocked('window.open (exception)');
                 statusText.textContent = 'Popup blocked (exception)';
             }
-        }, 1000);
+            signalComplete();
+        }, 200);
 
         // Attempt 2: top.location.href navigation (test access only)
         setTimeout(() => {
@@ -91,7 +104,8 @@
             } catch (e) {
                 logBlocked('top.location.href (access blocked: ' + e.message + ')');
             }
-        }, 2000);
+            signalComplete();
+        }, 400);
 
         // Attempt 3: location.href self-navigation (controlled test)
         setTimeout(() => {
@@ -100,7 +114,7 @@
                 const originalHref = location.href;
                 // Test with hash-based navigation (safe, same-origin)
                 location.href = originalHref + '#test-nav';
-                
+
                 setTimeout(() => {
                     if (location.href.includes('#test-nav')) {
                         logAttempt('location.href', 'Same-origin navigation succeeded (expected)');
@@ -109,11 +123,12 @@
                     } else {
                         logBlocked('location.href (same-origin navigation blocked)');
                     }
-                }, 100);
+                }, 50);
             } catch (e) {
                 logBlocked('location.href (exception: ' + e.message + ')');
             }
-        }, 3000);
+            signalComplete();
+        }, 600);
 
         // Attempt 4: Forced download
         setTimeout(() => {
@@ -127,7 +142,8 @@
             } catch (e) {
                 logBlocked('download (exception)');
             }
-        }, 4000);
+            signalComplete();
+        }, 800);
 
         // Attempt 5: window.top.postMessage (should be allowed for communication)
         setTimeout(() => {
@@ -141,7 +157,8 @@
             } catch (e) {
                 logBlocked('postMessage (exception)');
             }
-        }, 5000);
+            signalComplete();
+        }, 1000);
 
         // Attempt 6: Clickjacking attempt (transparent overlay)
         setTimeout(() => {
@@ -158,7 +175,7 @@
                 overlay.style.pointerEvents = 'auto';
                 overlay.title = 'Hostile overlay';
                 document.body.appendChild(overlay);
-                
+
                 setTimeout(() => {
                     if (document.body.contains(overlay)) {
                         logAttempt('clickjacking', 'Overlay created (potential clickjacking vector)');
@@ -167,18 +184,19 @@
                     } else {
                         logBlocked('clickjacking (overlay creation blocked)');
                     }
-                }, 100);
+                }, 50);
             } catch (e) {
                 logBlocked('clickjacking (exception: ' + e.message + ')');
             }
-        }, 6000);
+            signalComplete();
+        }, 1200);
 
         // Attempt 7: Timing attack (performance measurement)
         setTimeout(() => {
             logAttempt('timing attack', 'Attempting timing attack via performance measurement');
             try {
                 const start = performance.now();
-                
+
                 // Try to detect if certain operations are blocked by measuring time
                 for (let i = 0; i < 1000; i++) {
                     try {
@@ -187,10 +205,10 @@
                         // Access blocked, but we can measure the exception time
                     }
                 }
-                
+
                 const end = performance.now();
                 const duration = end - start;
-                
+
                 if (duration > 100) {
                     logAttempt('timing attack', 'High latency detected (' + duration.toFixed(2) + 'ms) - possible security checks');
                 } else {
@@ -199,7 +217,8 @@
             } catch (e) {
                 logBlocked('timing attack (exception: ' + e.message + ')');
             }
-        }, 7000);
+            signalComplete();
+        }, 1400);
 
         // Attempt 8: Pointer events manipulation
         setTimeout(() => {
@@ -214,7 +233,7 @@
                 testDiv.style.height = '100%';
                 testDiv.style.zIndex = '999998';
                 document.body.appendChild(testDiv);
-                
+
                 setTimeout(() => {
                     if (document.body.contains(testDiv)) {
                         logAttempt('pointer events', 'Pointer events manipulation succeeded');
@@ -222,16 +241,12 @@
                     } else {
                         logBlocked('pointer events (manipulation blocked)');
                     }
-                }, 100);
+                }, 50);
             } catch (e) {
                 logBlocked('pointer events (exception: ' + e.message + ')');
             }
-        }, 8000);
-
-        // Final status
-        setTimeout(() => {
-            statusText.textContent = 'All hostile attempts completed';
-            statusText.style.color = 'blue';
+            signalComplete();
+        }, 1600);
 
         // Manual test buttons for E2E testing
         document.getElementById('open-popup')?.addEventListener('click', () => {
@@ -264,7 +279,6 @@
                 statusText.textContent = 'Top navigation blocked';
             }
         });
-        }, 9000);
     </script>
 </body>
 </html>

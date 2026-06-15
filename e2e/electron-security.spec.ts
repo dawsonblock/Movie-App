@@ -45,7 +45,10 @@ test.describe('Electron Security Tests', () => {
    * Resolves to true only if a download is actually allowed to complete.
    * Electron's will-download handler cancels blocked downloads, but Playwright's
    * CDP integration may still emit a download-start event. We verify the download
-   * was not canceled by checking download.failure() after a short grace period.
+   * was not canceled by checking download.failure() after the event fires.
+   *
+   * Uses an event-driven wait instead of a fixed sleep so tests return as soon as
+   * Electron processes the download (or the max timeout is reached).
    */
   async function didDownloadFire(triggerFn: () => Promise<void>, timeoutMs = 3000): Promise<boolean> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,8 +58,11 @@ test.describe('Electron Security Tests', () => {
     page.on('download', handler);
     try {
       await triggerFn();
-      // Give Electron's will-download handler time to cancel the download
-      await page.waitForTimeout(timeoutMs);
+      // Deterministic wait: resolve immediately when the download event fires,
+      // or after the grace period if nothing happens.
+      if (!download) {
+        await page.waitForEvent('download', { timeout: timeoutMs }).catch(() => {/* no download */});
+      }
     } finally {
       page.off('download', handler);
     }
@@ -67,7 +73,7 @@ test.describe('Electron Security Tests', () => {
   }
 
   /** Waits for the hostile-iframe container to dispatch its security-check-complete event. */
-  async function waitForSecurityCheck(timeoutMs = 12000): Promise<void> {
+  async function waitForSecurityCheck(timeoutMs = 6000): Promise<void> {
     await page.evaluate(() => {
       return new Promise<void>((resolve) => {
         const onComplete = () => {

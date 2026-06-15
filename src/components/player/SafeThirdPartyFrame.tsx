@@ -63,6 +63,17 @@ export function SafeThirdPartyFrame({ src, title, className }: SafeThirdPartyFra
           </p>
         </div>
       )}
+      {dismissed && (
+        <button
+          type="button"
+          aria-label="Re-enable player protection overlay"
+          title="Re-enable player protection overlay"
+          className="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white backdrop-blur-sm transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-white"
+          onClick={() => setDismissed(false)}
+        >
+          S
+        </button>
+      )}
     </div>
   );
 }
